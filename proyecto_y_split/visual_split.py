@@ -340,7 +340,7 @@ comun = len(eb & ew2)
 
 info = (f"MAX: BEST={all_results['BEST']['pc_max']:.4f}  "
         f"WORST={all_results['WORST']['pc_max']:.4f}  |  "
-        f"Aristas en comun MAX: {comun}/7 ({100*comun/7:.0f}%)")
+        f"Aristas en comun MAX: {comun}/6 ({100*comun/6:.0f}%)")
 fig.text(0.5, 0.01, info, ha='center', fontsize=13, color='#2c3e50',
          fontweight='bold')
 
