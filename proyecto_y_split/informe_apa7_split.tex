@@ -1,0 +1,750 @@
+% ==============================================================================
+%  INFORME - Análisis comparativo BEST (Y=1) vs WORST (Y=0)
+%  Dataset: d9_strong.txt dividido por la variable Y
+%  Formato: APA 7ma edición (manual, tipo informe de tesis)
+%  Compilar en Overleaf con pdflatex (2-3 pasadas)
+% ==============================================================================
+
+\documentclass[12pt, a4paper]{article}
+
+% --- PAQUETES ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish, es-tabla]{babel}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{float}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{array}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{titling}
+\usepackage{geometry}
+\usepackage{times}
+\usepackage{caption}
+\usepackage{tocloft}
+
+% --- FORMATO APA 7 ---
+\geometry{margin=2.54cm}
+\doublespacing
+\setlength{\parindent}{1.27cm}
+\setlength{\parskip}{0pt}
+
+% Encabezado (running head)
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+% Títulos de sección (APA 7)
+\titleformat{\section}[block]{\raggedright\bfseries\fontsize{12}{14}\selectfont}{\thesection}{1em}{}
+\titlespacing{\section}{0pt}{12pt}{6pt}
+
+\titleformat{\subsection}[block]{\bfseries\fontsize{12}{14}\selectfont\raggedright}{\thesubsection}{1em}{}
+\titlespacing{\subsection}{0pt}{12pt}{6pt}
+
+% Captions estilo APA 7
+\captionsetup{font={small,sf}, labelfont={bf}, textfont={it}, labelsep=period}
+
+% --- DATOS DEL DOCUMENTO ---
+\title{Análisis Comparativo de la Topología del Árbol de Expansión entre
+       los Grupos BEST y WORST usando Información Mutua y Algoritmos de
+       Prim-Kruskal}
+\author{}
+\date{}
+
+\begin{document}
+
+% ==============================================================================
+% PORTADA (APA 7 manual)
+% ==============================================================================
+
+% ==============================================================================
+% CARATULA - UNIVERSIDAD NACIONAL DEL ALTIPLANO
+% ==============================================================================
+
+\begin{titlepage}
+\centering
+
+{\large \textbf{UNIVERSIDAD NACIONAL DEL ALTIPLANO}}\\[0.3cm]
+{\large \textbf{FACULTAD DE INGENIERIA MECANICA ELECTRICA, ELECTRONICA Y SISTEMAS}}\\[0.3cm]
+{\large \textbf{ESCUELA PROFESIONAL DE INGENIERIA DE SISTEMAS}}\\[1cm]
+
+\includegraphics[width=3.5cm]{logo.png}\\[0.5cm]
+
+{\Large \textbf{ANALISIS COMPARATIVO DE LA TOPOLOGIA DEL ARBOL DE EXPANSION}}\\[0.3cm]
+{\large \textbf{Entre los Grupos BEST y WORST usando Informacion Mutua}}\\[1cm]
+
+\textbf{PRESENTADO POR:}\\
+Huanacuni Ccama Jhon Edy\\[0.5cm]
+
+\textbf{CURSO:}\\
+Lenguajes de Programacion\\[0.8cm]
+
+\textbf{DOCENTE:}\\
+ING. JOSE LUIS JUAREZ RUELAS\\[0.8cm]
+
+\textbf{SEMESTRE ACADEMICO:}\\
+2026-I
+
+\end{titlepage}
+
+% ==============================================================================
+% INDICE
+% ==============================================================================
+
+\newpage
+\tableofcontents
+\newpage
+
+\section*{Resumen}
+\addcontentsline{toc}{section}{Resumen}
+
+Este trabajo presenta un análisis comparativo de la estructura de
+dependencias entre variables en dos subconjuntos del dataset
+\texttt{d9\_strong.txt}: el grupo BEST (502 registros, $Y = 1$) y el grupo
+WORST (498 registros, $Y = 0$). Las variables $x_7$ y $x_8$ resultaron
+ser columnas idénticas (0 diferencias en 1000 filas), por lo que se
+combinaron en una sola variable $Y$. Para cada grupo se aplicó el
+pipeline completo de teoría de la información: entropía de Shannon
+$H(X)$ para las 8 variables, Información Mutua $I(X;Y)$ entre los 28
+pares, matriz IM simétrica de $7 \times 7$, conversión a distancia
+mediante $d = 1 - I/\min(H_i, H_j)$, y Árboles de Expansión Mínima y
+Máxima mediante los algoritmos de Prim y Kruskal. Los resultados muestran
+que $Y$ se vuelve constante en cada grupo ($H(Y) = 0$), degenerando el
+árbol MIN con costo total cero. Sin embargo, el árbol MAX basado en MI
+directa revela diferencias estructurales: el costo varía de 2.833722 (BEST)
+a 2.809188 (WORST), el hub central cambia de $x_1$ (grado 3, BEST) a $x_9$
+(grado 4, WORST), y solo 5 de 7 aristas son comunes entre ambos grupos. La
+variable $x_3$ presenta la mayor variación de entropía ($\Delta H = -0.069$)
+entre grupos. Estos hallazgos demuestran que las topologías de dependencia
+son sensibles al contexto y que las variables de partición no deben incluirse
+como features en el análisis de cada subconjunto.
+
+\vspace{0.5cm}
+\noindent\textit{Palabras clave:} Entropía de Shannon, Información Mutua,
+Árbol de Expansión, Prim, Kruskal, BEST vs WORST, variable de partición.
+
+% ==============================================================================
+% ABSTRACT
+% ==============================================================================
+
+\section*{Abstract}
+\addcontentsline{toc}{section}{Abstract}
+
+This paper presents a comparative analysis of variable dependency structures
+between two subsets of the \texttt{d9\_strong.txt} dataset: the BEST group
+(502 records, $Y = 1$) and the WORST group (498 records, $Y = 0$). Variables
+$x_7$ and $x_8$ were found to be identical columns and were merged into $Y$.
+For each group, the complete information-theoretic pipeline was applied:
+Shannon entropy $H(X)$, Mutual Information $I(X;Y)$ across 28 pairs, an
+$7 \times 7$ IM matrix, distance transformation via $d = 1 - I/\min(H_i, H_j)$,
+and Minimum and Maximum Spanning Trees via Prim and Kruskal algorithms. Results
+show that $Y$ becomes constant ($H(Y) = 0$), degenerating the MIN tree. The MAX
+tree reveals structural differences: cost varies from 2.833722 (BEST) to
+2.809188 (WORST), the hub shifts from $x_1$ to $x_9$, and only 6 of 7 edges
+are shared. Variable $x_3$ shows the largest entropy variation ($\Delta H =
+-0.069$), demonstrating context-sensitive dependency topologies.
+
+\vspace{0.5cm}
+\noindent\textit{Keywords:} Shannon entropy, Mutual Information, Spanning Tree,
+Prim, Kruskal, BEST vs WORST, partition variable.
+
+\newpage
+
+% ==============================================================================
+\section{Introducción}
+% ==============================================================================
+
+Este trabajo aborda el análisis del dataset \texttt{d9\_strong.txt}, con
+1000 registros y 9 variables categóricas que toman valores discretos en
+$\{0, 1, 2, 3\}$.
+
+Un análisis previo detectó que $x_7$ y $x_8$ son columnas idénticas
+(0 diferencias en 1000 filas). En consecuencia, se combinaron en una sola
+variable $Y = x_7$. A partir de $Y$ se definieron dos grupos: BEST
+(502 registros, $Y = 1$) y WORST (498 registros, $Y = 0$).
+
+El objetivo del trabajo es aplicar el pipeline completo de teoría de la
+información ---entropía, Información Mutua, matriz IM y Árbol de Expansión
+Mínima--- a cada grupo por separado y comparar las topologías de red
+resultantes para cuantificar los patrones de cambio en el comportamiento de
+las variables según el contexto definido por $Y$.
+
+% ==============================================================================
+\section{Objetivos}
+% ==============================================================================
+
+El objetivo general del presente trabajo es ejecutar el pipeline completo
+de teoría de la información y teoría de grafos sobre el dataset
+\texttt{d9\_strong.txt}, particionado en los grupos BEST y WORST, para
+identificar y cuantificar los cambios en la topología de dependencias
+entre variables según el contexto definido por la variable $Y$.
+
+Para alcanzar este objetivo general, se plantean los siguientes objetivos
+específicos:
+
+\begin{enumerate}
+    \item Combinar las variables redundantes $x_7$ y $x_8$ en una sola
+          variable $Y$, y particionar el dataset en dos grupos:
+          BEST ($Y = 1$, 502 registros) y WORST ($Y = 0$, 498 registros).
+
+    \item Calcular la entropía $H(X)$, la Información Mutua
+          $I(X;Y)$, la matriz IM de $7 \times 7$ y la matriz de
+          distancias para cada grupo por separado.
+
+    \item Construir los Árboles de Expansión Mínima (MIN) y
+          Máxima (MAX) mediante los algoritmos de Prim y Kruskal
+          para cada grupo.
+
+    \item Comparar las topologías de red resultantes y cuantificar
+          las diferencias en: costo total, hub central, aristas
+          compartidas y pares con dependencia perfecta.
+
+    \item Identificar las variables cuyo comportamiento cambia
+          significativamente entre BEST y WORST, y determinar si la
+          variable de partición $Y$ afecta la estructura de
+          dependencias.
+\end{enumerate}
+
+% ==============================================================================
+\section{Marco Teórico}
+% ==============================================================================
+
+\subsection{Entropía de Shannon}
+
+La entropía de una variable aleatoria discreta $X$ cuantifica su
+incertidumbre promedio y se define como \cite{shannon1948}:
+
+\begin{equation}\label{eq:entropy}
+    H(X) = -\sum_{x \in \mathcal{X}} P(x) \cdot \log_2 P(x)
+\end{equation}
+
+donde $\mathcal{X}$ es el conjunto de valores que toma $X$. La entropía
+máxima se alcanza con una distribución uniforme: $H_{\max} = \log_2(k)$,
+donde $k$ es la cantidad de valores distintos de la variable.
+
+\subsection{Información Mutua}
+
+La Información Mutua entre dos variables $X$ e $Y$ mide la cantidad de
+información compartida entre ellas \cite{cover2006}:
+
+\begin{equation}\label{eq:mi}
+    I(X;Y) = \sum_{x} \sum_{y} P(x,y) \cdot
+    \log_2 \left( \frac{P(x,y)}{P(x) \cdot P(y)} \right)
+\end{equation}
+
+Siempre se cumple $0 \le I(X;Y) \le \min(H(X), H(Y))$, donde $I = 0$
+implica independencia total y $I = \min(H)$ implica dependencia perfecta:
+una variable determina completamente a la otra.
+
+\subsection{Conversión a Distancia}
+
+Para construir un árbol de costo mínimo, la medida de similitud IM debe
+convertirse en una distancia. Se utiliza la siguiente transformación:
+
+\begin{equation}\label{eq:distance}
+    d(X_i, X_j) = 1 -
+    \frac{I(X_i; X_j)}{\min\!\big(H(X_i), H(X_j)\big)}
+\end{equation}
+
+donde $d \in [0,1]$, con $d = 0$ para dependencia perfecta y $d = 1$
+para independencia total. Una propiedad importante de la
+Ecuación~\ref{eq:distance} es que cuando una variable es constante
+($H = 0$), todas las aristas incidentes tienen $d = 0$, produciendo
+un árbol degenerado.
+
+\subsection{Algoritmo de Prim}
+
+El Algoritmo~\ref{alg:prim} construye el MST incrementalmente desde
+un nodo inicial, agregando en cada paso la arista de menor peso que
+conecte un nodo visitado con uno no visitado \cite{prim1957}.
+
+\begin{algorithm}[H]
+\caption{Prim --- Árbol de Expansión Mínima}\label{alg:prim}
+\begin{algorithmic}[1]
+\Function{Prim}{$D[n][n]$} \Comment{Matriz de distancias}
+    \State $V \gets \{0\}$ \Comment{Nodo inicial}
+    \State $E \gets \{\,\}$ \Comment{Aristas del árbol}
+    \While{$|V| < n$}
+        \State $mejor \gets \infty$
+        \For{\textbf{cada} $u \in V$}
+            \For{\textbf{cada} $v \notin V$}
+                \If{$D[u][v] < mejor$}
+                    \State $mejor \gets D[u][v]$
+                    \State $(u^*, v^*) \gets (u, v)$
+                \EndIf
+            \EndFor
+        \EndFor
+        \State $V \gets V \cup \{v^*\}$
+        \State $E \gets E \cup \{(u^*, v^*, mejor)\}$
+    \EndWhile
+    \State \Return $E$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Algoritmo de Kruskal}
+
+El Algoritmo~\ref{alg:kruskal} ordena todas las aristas y las procesa
+utilizando una estructura Union-Find, aceptando aquellas que no forman
+ciclos \cite{kruskal1956}.
+
+\begin{algorithm}[H]
+\caption{Kruskal con Union-Find}\label{alg:kruskal}
+\begin{algorithmic}[1]
+\Function{Kruskal}{$D[n][n]$}
+    \State $E \gets \{\,\}$
+    \State $A \gets$ \Call{Ordenar}{aristas $(i,j)$ por $D[i][j]$ asc.}
+    \State $UF \gets$ \Call{UnionFind}{$n$} \Comment{$n$ conjuntos unitarios}
+    \For{\textbf{cada} $(d, u, v) \in A$}
+        \If{\Call{Find}{$u$} $\neq$ \Call{Find}{$v$}}
+            \State \Call{Union}{$u, v$}
+            \State $E \gets E \cup \{(u, v, d)\}$
+            \If{$|E| = n - 1$} \State \textbf{romper} \EndIf
+        \EndIf
+    \EndFor
+    \State \Return $E$
+\EndFunction
+\Statex
+\Function{Find}{$x$} \Comment{Compresión de ruta}
+    \If{$parent[x] \neq x$}
+        \State $parent[x] \gets$ \Call{Find}{$parent[x]$}
+    \EndIf
+    \State \Return $parent[x]$
+\EndFunction
+\Statex
+\Function{Union}{$x, y$}
+    \State $rx \gets$ \Call{Find}{$x$}, $ry \gets$ \Call{Find}{$y$}
+    \If{$rx = ry$} \State \Return \textbf{falso} \EndIf
+    \If{$rank[rx] < rank[ry]$}
+        \State $parent[rx] \gets ry$
+    \ElsIf{$rank[rx] > rank[ry]$}
+        \State $parent[ry] \gets rx$
+    \Else
+        \State $parent[ry] \gets rx$
+        \State $rank[rx] \gets rank[rx] + 1$
+    \EndIf
+    \State \Return \textbf{verdadero}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+% ==============================================================================
+\section{Metodología}
+% ==============================================================================
+
+\subsection{Preparación de los Datos}
+
+\begin{enumerate}
+    \item Se carga \texttt{d9\_strong.txt} (1000 $\times$ 9).
+    \item Se combinan $x_7$ y $x_8$ (idénticas) en una sola variable
+          $Y = x_7$. Las columnas finales son: $x_1$, $x_2$, $x_3$,
+          $x_4$, $x_5$, $x_6$, $Y$, $x_9$.
+    \item Se separa en dos archivos: \texttt{d9\_strong\_B.csv}
+          ($Y = 1$, 502 registros) y \texttt{d9\_strong\_W.csv}
+          ($Y = 0$, 498 registros).
+\end{enumerate}
+
+\subsection{Cálculo de Entropía}
+
+El Algoritmo~\ref{alg:entropia} implementa la Ecuación~\ref{eq:entropy}.
+Recibe una lista de probabilidades y devuelve la entropía en bits.
+
+\begin{algorithm}[H]
+\caption{Cálculo de Entropía $H(X)$}\label{alg:entropia}
+\begin{algorithmic}[1]
+\Function{Entropía}{$probs$}
+    \State $total \gets 0$
+    \For{\textbf{cada} $p \in probs$}
+        \If{$p > 0$}
+            \State $total \gets total - p \cdot \log_2(p)$
+        \EndIf
+    \EndFor
+    \State \Return $total$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Cálculo de Información Mutua}
+
+El Algoritmo~\ref{alg:mi} implementa la Ecuación~\ref{eq:mi}. Construye
+la tabla de contingencia contando las ocurrencias conjuntas y acumula
+los términos de la suma.
+
+\begin{algorithm}[H]
+\caption{Cálculo de Información Mutua $I(X;Y)$}\label{alg:mi}
+\begin{algorithmic}[1]
+\Function{MI}{$X$, $Y$, $n$}
+    \State $jc \gets \{\,\}$ \Comment{Tabla de contingencia}
+    \For{$i \gets 1$ \textbf{hasta} $n$}
+        \State $jc[(X[i], Y[i])] \gets jc[(X[i], Y[i])] + 1$
+    \EndFor
+    \State $mi \gets 0$
+    \For{\textbf{cada} $(v_x, v_y), c \in jc$}
+        \State $p_{xy} \gets c / n$
+        \State $p_x \gets$ \Call{Contar}{$X = v_x$} $/\, n$
+        \State $p_y \gets$ \Call{Contar}{$Y = v_y$} $/\, n$
+        \State $razón \gets p_{xy} / (p_x \cdot p_y)$
+        \State $mi \gets mi + p_{xy} \cdot \log_2(razón)$
+    \EndFor
+    \State \Return $mi$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Pipeline Completo}
+
+El Algoritmo~\ref{alg:pipeline} resume la secuencia completa de
+procesamiento aplicada a cada grupo de forma independiente.
+
+\begin{algorithm}[H]
+\caption{Pipeline Completo de Procesamiento}\label{alg:pipeline}
+\begin{algorithmic}[1]
+\Function{Pipeline}{$datos$}
+    \State \Call{Frecuencias}{$datos$} $\to$ \Call{Probabilidades}{}
+    \State $H \gets$ \Call{Entropía}{$probs$} \Comment{7 valores}
+    \State $MI \gets \{\,\}$ \Comment{21 pares}
+    \For{\textbf{cada} par $(X_i, X_j)$, $i < j$}
+        \State $MI[i,j] \gets$ \Call{MI}{$X_i$, $X_j$, $n$}
+    \EndFor
+    \State \Call{MatrizIM}{$MI$} $7 \times 7$ \Comment{Simétrica}
+    \State $D \gets$ \Call{Distancia}{$MI$, $H$} \Comment{Ec.~\ref{eq:distance}}
+    \State $MST_{min} \gets$ \Call{Prim}{$D$} \Comment{MIN}
+    \State $MST_{max} \gets$ \Call{Prim}{$MI$} (criterio máx.) \Comment{MAX}
+    \State \Return $H$, $MI$, $D$, $MST_{min}$, $MST_{max}$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+% ==============================================================================
+\section{Resultados}
+% ==============================================================================
+
+\subsection{Variable $Y$ como Criterio de Partición}
+
+\textit{Cumplimiento del Objetivo 1:} $Y$ se utilizó exitosamente para
+particionar el dataset en BEST ($Y=1$, 502 registros) y WORST ($Y=0$,
+498 registros), sin incluirse en los CSVs de análisis (7 variables:
+$x_1$--$x_6$, $x_9$).
+
+La Tabla~\ref{tab:entropy} compara las entropías de cada variable entre
+ambos grupos. Las diferencias observadas reflejan cambios reales en las
+distribuciones según el contexto definido por $Y$.
+
+\begin{table}[H]
+    \centering
+    \caption{Entropías $H(X)$ en BEST y WORST}
+    \label{tab:entropy}
+    \small
+    \begin{tabular}{cccc}
+    \toprule
+    Variable & BEST & WORST & $\Delta$ \\
+    \midrule
+    $x_1$ & 0.7586 & 0.7354 & +0.0232 \\
+    $x_2$ & 0.9991 & 0.9986 & +0.0005 \\
+    $x_3$ & 0.6741 & 0.7431 & $-$0.0690 \\
+    $x_4$ & 0.7475 & 0.6860 & +0.0614 \\
+    $x_5$ & 1.4116 & 1.4162 & $-$0.0046 \\
+    $x_6$ & 0.9974 & 0.9998 & $-$0.0024 \\
+    $x_9$ & 1.7448 & 1.6854 & +0.0593 \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+$x_3$ presenta el mayor cambio de entropía ($-0.069$), seguido de $x_4$
+($+0.061$) y $x_9$ ($+0.059$), indicando que las distribuciones de estas
+variables son las más sensibles al valor de $Y$.
+
+\subsection{Matrices IM y de Distancias}
+
+\textit{} se calcularon exitosamente las
+matrices IM y de distancias para ambos grupos, verificando que la fila
+y columna $Y$ contienen ceros por ser $Y$ constante.
+
+La Figura~\ref{fig:matrices} muestra los heatmaps de las matrices IM
+y de distancias para ambos grupos. Dado que $Y$ es constante, todas las
+entradas en la fila y columna $Y$ son cero tanto en la matriz IM como
+en la matriz de distancias.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{fig_matrices.png}
+    \caption{Matrices IM y de Distancias para los grupos BEST y WORST}
+    \label{fig:matrices}
+\end{figure}
+
+\subsection{Árbol MIN --- Análisis de Distancias}
+
+\textit{Cumplimiento del Objetivo 3:} el árbol MIN se construyó
+correctamente mediante Prim y Kruskal para ambos grupos, con costos
+reales y comparables (Tabla~\ref{tab:min}).
+
+A diferencia del enfoque anterior que incluía $Y$, al excluir esta variable
+de los CSVs el árbol MIN no sufre degeneración. Las aristas con $d=0$
+($x_4$--$x_9$ y $x_6$--$x_9$) representan dependencias reales entre
+variables, no artefactos de una variable constante.
+
+\begin{table}[H]
+    \centering
+    \caption{Árboles MIN (distancias) para BEST y WORST}
+    \label{tab:min}
+    \small
+    \begin{tabular}{c@{\qquad}c}
+    \toprule
+    \textbf{BEST (2.782115)} & \textbf{WORST (2.723224)} \\
+    \midrule
+    $x_9$--$x_4$ (0.000) & $x_9$--$x_6$ (0.000) \\
+    $x_9$--$x_6$ (0.000) & $x_9$--$x_4$ (0.000) \\
+    $x_5$--$x_2$ (0.344) & $x_5$--$x_2$ (0.312) \\
+    $x_1$--$x_5$ (0.453) & $x_1$--$x_5$ (0.424) \\
+    $x_5$--$x_9$ (0.989) & $x_9$--$x_3$ (0.992) \\
+    $x_1$--$x_3$ (0.997) & $x_5$--$x_9$ (0.995) \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+Este resultado es matemáticamente correcto y muestra que ambos árboles
+tienen costos cercanos pero diferentes ($\Delta = 0.059$), reflejando
+cambios en las dependencias entre grupos.
+
+\subsection{Árbol MAX --- Estructura con MI Directa}
+
+\textit{Cumplimiento del Objetivo 3:} el árbol MAX completa el objetivo
+al ofrecer una perspectiva complementaria usando MI directa como peso.
+
+El árbol MAX utiliza directamente la Información Mutua como peso de cada
+arista. La Tabla~\ref{tab:max} presenta
+las aristas resultantes para cada grupo. Las Figuras~\ref{fig:arbol_best}
+y~\ref{fig:arbol_worst} muestran los árboles individuales.
+
+\begin{table}[H]
+    \centering
+    \caption{Árboles MAX (MI directa) para BEST y WORST}
+    \label{tab:max}
+    \small
+    \begin{tabular}{c@{\qquad}c}
+    \toprule
+    \textbf{BEST (2.833722)} & \textbf{WORST (2.809188)} \\
+    \midrule
+    $x_9$--$x_6$ (0.9974) & $x_9$--$x_6$ (0.9998) \\
+    $x_9$--$x_4$ (0.7475) & $x_5$--$x_2$ (0.6869) \\
+    $x_5$--$x_2$ (0.6555) & $x_9$--$x_4$ (0.6860) \\
+    $x_1$--$x_5$ (0.4150) & $x_1$--$x_5$ (0.4237) \\
+    $x_5$--$x_9$ (0.0162) & $x_5$--$x_9$ (0.0069) \\
+    $x_1$--$x_3$ (0.0022) & $x_9$--$x_3$ (0.0058) \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{fig_arbol_best.png}
+    \caption{Árbol BEST: MIN (distancias) + MAX (MI directa)}
+    \label{fig:arbol_best}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{fig_arbol_worst.png}
+    \caption{Árbol WORST: MIN (distancias) + MAX (MI directa)}
+    \label{fig:arbol_worst}
+\end{figure}
+
+\subsection{Comparación BEST vs WORST}
+
+\textit{Cumplimiento de los Objetivos 4 y 5:} se cuantificaron las
+diferencias topológicas entre ambos grupos (costos MIN distintos,
+83\% de aristas compartidas) y se identificó a $x_3$ como la variable más
+sensible al contexto de $Y$ ($\Delta H = -0.069$).
+
+La Tabla~\ref{tab:comparacion} resume las métricas comparativas más
+relevantes entre ambos grupos. La Figura~\ref{fig:comparacion} muestra
+los cuatro árboles de expansión lado a lado.
+
+\begin{table}[H]
+    \centering
+    \caption{Métricas comparativas: BEST vs WORST}
+    \label{tab:comparacion}
+    \small
+    \begin{tabular}{lcc}
+    \toprule
+    Métrica & BEST & WORST \\
+    \midrule
+    Registros & 502 & 498 \\
+    Costo Prim MIN & 2.782115 & 2.723224 \\
+    Costo Kruskal MIN & 2.782115 & 2.723224 \\
+    Costo Prim MAX & 2.833722 & 2.809188 \\
+    Costo Kruskal MAX & 2.833722 & 2.809188 \\
+    Aristas MIN compartidas & \multicolumn{2}{c}{5/6 (83\%)} \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+Se destaca que los costos MIN difieren entre BEST (2.782115) y WORST
+(2.723224), reflejando un cambio en las dependencias según el contexto
+de $Y$. En el árbol MIN, 5 de las 6 aristas son comunes, con una única
+arista diferente entre ambos grupos ($x_1$--$x_3$ en BEST vs $x_9$--$x_3$
+en WORST).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{fig_comparacion.png}
+    \caption{Comparación final: BEST vs WORST, MIN y MAX}
+    \label{fig:comparacion}
+\end{figure}
+
+% ==============================================================================
+\section{Discusión}
+% ==============================================================================
+
+\subsection{Papel de la Variable de Partición $Y$}
+
+La variable $Y$ ($x_7$ = $x_8$, columnas idénticas) se utilizó exclusivamente
+para particionar el dataset en BEST ($Y=1$) y WORST ($Y=0$), sin incluirse
+como variable de análisis en los CSVs resultantes. Esta decisión
+metodológica evita la degeneración del árbol MIN que ocurriría si $Y$
+---al ser constante en cada grupo--- se incluyera como feature, produciendo
+$d=0$ en todas sus aristas incidentes. Al excluir $Y$, ambos árboles MIN
+obtienen costos reales y comparables: 2.782115 en BEST y 2.723224 en WORST.
+
+\subsection{Cambio Topológico BEST vs WORST}
+
+Aunque 5 de las 6 aristas (83\%) son comunes entre ambos árboles MIN,
+la diferencia en una arista indica que las relaciones de dependencia se
+modifican según el contexto de $Y$. El costo MIN difiere ($\Delta = 0.059$),
+confirmando este cambio estructural. En el árbol MAX, la diferencia de
+costos es menor ($\Delta = 0.025$) pero también se observan diferencias
+en las aristas seleccionadas.
+
+\subsection{Implicaciones Prácticas}
+
+El análisis demuestra los siguientes puntos:
+
+\begin{enumerate}
+    \item La eliminación de variables redundantes ($x_7$-$x_8 \to Y$)
+          simplifica el modelo sin pérdida de información.
+    \item La partición por $Y$ revela patrones de cambio en las
+          dependencias, cuantificables a través de los árboles MIN y MAX.
+    \item La exclusión de $Y$ como variable de análisis es necesaria
+          para evitar la degeneración del árbol MIN, ya que $Y$ se vuelve
+          constante en cada grupo al ser la variable de partición.
+\end{enumerate}
+
+% ==============================================================================
+\section{Conclusiones}
+% ==============================================================================
+
+\begin{enumerate}
+    \item Se implementó exitosamente el pipeline BEST vs WORST,
+          generando dos datasets de 502 y 498 registros con 7
+          variables cada uno (x1-x6, x9).
+
+    \item La variable $Y$ ($x_7=x_8$) se utilizó exclusivamente como
+          criterio de partición, sin incluirse en los CSVs de análisis.
+          Esto evita la degeneración del árbol MIN y permite obtener
+          costos reales: 2.782115 (BEST) y 2.723224 (WORST).
+
+    \item El árbol MIN revela diferencias estructurales: BEST tiene
+          costo 2.782115 y WORST 2.723224,
+          con 5 de 6 aristas en común (83\%).
+
+    \item $x_3$ es la variable con mayor $\Delta H$ entre grupos
+          ($-0.069$), siendo la más sensible al contexto de $Y$.
+
+    \item Los algoritmos de Prim y Kruskal coinciden en todos los
+          casos, validando la implementación.
+\end{enumerate}
+
+% ==============================================================================
+\section{Video de Exposición}
+% ==============================================================================
+
+El video de exposición de 10 minutos se encuentra disponible en el
+siguiente enlace:
+
+\begin{center}
+\url{https://youtu.be/YOUR\_LINK\_HERE}
+\end{center}
+
+% ==============================================================================
+\section{Repositorio de Código}
+% ==============================================================================
+
+El código fuente completo del proyecto se encuentra disponible en:
+
+\begin{center}
+\url{https://github.com/YOUR\_USER/YOUR\_REPO}
+\end{center}
+
+Archivos del proyecto en \texttt{proyecto\_y\_split/}:
+\texttt{generar\_csvs.py}, \texttt{pipeline\_comparar.py},
+\texttt{visual\_split.py}, \texttt{d9\_strong\_B.csv},
+\texttt{d9\_strong\_W.csv}, \texttt{resultados\_split.xlsx}.
+
+% ==============================================================================
+\section*{Apéndices}
+\addcontentsline{toc}{section}{Apéndices}
+% ==============================================================================
+
+\subsection{Salida de Consola}
+
+La Figura~\ref{fig:consola} muestra la salida de consola del pipeline
+comparativo con todos los resultados numéricos.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.60\textwidth]{fig_consola.png}
+    \caption{Salida de consola del pipeline comparativo}
+    \label{fig:consola}
+\end{figure}
+
+\subsection{Hoja de Cálculo Excel}
+
+La Figura~\ref{fig:excel} muestra la hoja COMPARACION del archivo Excel
+generado con los resultados completos.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.60\textwidth]{fig_excel.png}
+    \caption{Hoja de comparación del archivo Excel generado}
+    \label{fig:excel}
+\end{figure}
+
+\section*{Referencias}
+\addcontentsline{toc}{section}{Referencias}
+
+\begin{thebibliography}{99}
+
+\bibitem{shannon1948}
+Shannon, C.~E. (1948).
+Una teoría matemática de la comunicación.
+\textit{Bell System Technical Journal}, \textit{27}(3), 379--423.
+
+\bibitem{cover2006}
+Cover, T.~M., y Thomas, J.~A. (2006).
+\textit{Elementos de teoría de la información} (2.\textsuperscript{a} ed.).
+Wiley-Interscience.
+
+\bibitem{prim1957}
+Prim, R.~C. (1957).
+Redes de conexión más cortas y algunas generalizaciones.
+\textit{Bell System Technical Journal}, \textit{36}(6), 1389--1401.
+
+\bibitem{kruskal1956}
+Kruskal, J.~B. (1956).
+Sobre el subárbol de expansión más corto de un grafo y el problema del
+agente viajero.
+\textit{Proceedings of the American Mathematical Society},
+\textit{7}(1), 48--50.
+
+\end{thebibliography}
+
+% ==============================================================================
+\end{document}
