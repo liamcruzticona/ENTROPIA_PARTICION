@@ -1,0 +1,361 @@
+================================================================================
+  GUION DE VIDEO - Exposicion de 10 Minutos
+  Pipeline: Entropia -> IM -> MST (Prim + Kruskal) + BEST vs WORST
+  Dataset: d9_strong.txt (1000 x 9 variables)
+================================================================================
+
+INSTRUCCIONES PARA GRABAR:
+  - Usa OBS Studio o cualquier grabador de pantalla.
+  - Abri una terminal en la carpeta del proyecto ANTES de empezar a grabar.
+  - Tené los archivos listos: pipeline_entropia_mst.py, visual_matriz.py,
+    visual_mst.py, pipeline_comparar.py, visual_split.py (en proyecto_y_split/).
+  - Lee este guion mientras mostras la pantalla. Habla despacio y claro.
+  - Cada seccion indica QUE EJECUTAR y QUE MOSTRAR en pantalla.
+  - Duracion total: exactamente 10 minutos. Respeta los tiempos.
+
+
+================================================================================
+  SECCION 1 | 0:00 - 0:45 | INTRODUCCION
+================================================================================
+
+[QUE MOSTRAR EN PANTALLA]
+  Mostra la carpeta del proyecto con todos los archivos.
+  O abri el archivo pipeline_entropia_mst.py (solo las primeras lineas).
+
+[QUE DECIR]
+"Buenos dias. Este trabajo presenta la implementacion de un pipeline completo
+de teoria de la informacion y teoria de grafos aplicado al dataset d9_strong.
+
+El dataset contiene 1000 registros y 9 variables categoricas: x1, x2, x3, x4,
+x5, x6, x7, x8 y x9. Los datos ya vienen discretizados con valores enteros
+entre 0 y 3.
+
+El objetivo es ejecutar la secuencia funcional completa: calcular la entropia
+de Shannon para cada variable, la Informacion Mutua entre los 36 pares,
+construir la matriz IM de 9 por 9, convertirla a distancias, y aplicar los
+algoritmos de Prim y Kruskal para obtener el Arbol de Expansion Minima.
+
+Ademas, se realiza un analisis comparativo dividiendo el dataset en dos grupos
+BEST y WORST a partir de la variable Y (x7=x8 combinadas, usada solo para
+particionar), ejecutando el pipeline sobre 7 variables (x1 a x6 y x9)
+con 21 pares de MI y 6 aristas en el MST."
+
+
+================================================================================
+  SECCION 2 | 0:45 - 1:30 | DATASET Y FRECUENCIAS
+================================================================================
+
+[QUE MOSTRAR EN PANTALLA]
+  Ejecuta: python visual_matriz.py
+  Cuando aparezca la PANTALLA 1 (grilla 3x3 de barras), explica.
+  Presiona ENTER para cerrar.
+
+[QUE DECIR]
+"Aca vemos la primera pantalla de la visualizacion de matrices.
+Los datos ya estan discretizados, por lo que no se requiere aplicar un
+algoritmo de discretizacion adicional. Lo que hacemos es contar las
+frecuencias y calcular las probabilidades de cada valor para cada variable.
+
+Por ejemplo, x1 tiene 787 ceros y 213 unos. x9 es la variable con mas
+valores posibles: 0, 1, 2 y 3.
+
+Cada barra muestra la probabilidad de cada valor, y el titulo incluye
+la entropia H calculada. Estos valores de frecuencia y probabilidad son
+la base para todos los calculos posteriores."
+
+
+================================================================================
+  SECCION 3 | 1:30 - 2:30 | ENTROPIA H(X)
+================================================================================
+
+[QUE MOSTRAR EN PANTALLA]
+  Presiona ENTER para avanzar a PANTALLA 2 de visual_matriz.py
+  (desarrollo completo de H(x5)).
+
+[QUE DECIR]
+"La entropia de Shannon se define como H de X igual a menos la sumatoria
+de P de x por logaritmo en base 2 de P de x. Se mide en bits y representa
+la cantidad promedio de incertidumbre de una variable.
+
+Aca desarrollamos el calculo completo de la entropia de x5 como ejemplo.
+x5 toma tres valores: 0, 1 y 2, con probabilidades 0.4810, 0.3930 y 0.1260.
+
+A la izquierda vemos las barras de probabilidad. A la derecha, el desarrollo
+paso a paso: primero la formula, luego las probabilidades, despues la
+sustitucion en la formula, el calculo de los logaritmos, las multiplicaciones,
+la suma, y finalmente el resultado: H de x5 es igual a 1.4140 bits.
+
+Para los 3 valores posibles, la entropia maxima seria log2 de 3, que es 1.5850.
+El valor real de 1.4140 indica que la distribucion no es perfectamente uniforme."
+
+
+================================================================================
+  SECCION 4 | 2:30 - 3:30 | INFORMACION MUTUA I(X;Y)
+================================================================================
+
+[QUE MOSTRAR EN PANTALLA]
+  Presiona ENTER para avanzar a PANTALLA 3 de visual_matriz.py
+  (tabla de contingencia x1-x5 + calculo MI).
+
+[QUE DECIR]
+"La Informacion Mutua mide cuanta informacion comparten dos variables.
+La formula es I de X punto y coma Y igual a la doble sumatoria de
+P de x coma y por el logaritmo de P de x coma y sobre P de x por P de y.
+
+Para calcularla necesitamos una tabla de contingencia, que cuenta las
+frecuencias conjuntas. A la izquierda vemos la tabla para x1 y x5.
+Por ejemplo, en 394 de los 1000 registros, x1 es 0 y x5 es 0 simultaneamente.
+
+A la derecha se desarrolla el calculo termino por termino. Para cada celda
+de la tabla con datos, se calcula P de x coma y, las probabilidades
+marginales, la razon, el logaritmo y el termino.
+
+Aca vemos los 4 terminos que contribuyen. Noten que el termino para x1 igual
+a 1 y x5 igual a 2 es el mas grande, con 0.2811, porque esa combinacion
+ocurre mucho mas de lo esperado si fueran independientes.
+
+La suma total es 0.4191 bits. Esto significa que x1 y x5 comparten
+0.4191 bits de informacion, lo que representa el 56 porciento de la
+entropia de x1."
+
+
+================================================================================
+  SECCION 5 | 3:30 - 4:15 | MATRIZ IM Y DISTANCIAS
+================================================================================
+
+[QUE MOSTRAR EN PANTALLA]
+  Presiona ENTER dos veces para pasar la PANTALLA 4 (heatmap IM animado,
+  deja que se llene solo) y luego la PANTALLA 5 (IM vs Distancias).
+
+[QUE DECIR]
+"Aca vemos la matriz de Informacion Mutua de 9 por 9. Es una matriz simetrica
+porque I de Xi con Xj es igual a I de Xj con Xi. La diagonal se deja en cero
+porque no tiene sentido conectar una variable consigo misma en el grafo.
+
+Los pares con mayor MI son x7-x8 con 0.9999, x6-x9 con 0.9997, y x4-x9
+con 0.7179. Estos valores altos indican dependencia casi perfecta.
+
+Para construir el arbol de expansion minima necesitamos distancias, no
+similitudes. Por eso aplicamos la formula d igual a 1 menos MI sobre el
+minimo de las entropias. Esta transformacion nos da distancias entre 0 y 1,
+donde 0 significa maxima dependencia y 1 independencia total.
+
+Aca comparamos las dos matrices lado a lado. Noten los tres pares con
+distancia cero: x4-x9, x6-x9 y x7-x8. Esto significa que esas variables
+tienen dependencia perfecta: una determina completamente a la otra."
+
+
+================================================================================
+  SECCION 6 | 4:15 - 5:30 | MST - ALGORITMO DE PRIM
+================================================================================
+
+[QUE MOSTRAR EN PANTALLA]
+  Ejecuta: python visual_mst.py
+  Avanza rapido los primeros 3 pasos (ENTER, ENTER, ENTER).
+  Detenete en el PASO 4 para explicar.
+  Segui avanzando hasta el PASO 8 (arbol completo).
+
+[QUE DECIR]
+"Ahora aplicamos el algoritmo de Prim sobre la matriz de distancias para
+obtener el Arbol de Expansion Minima.
+
+Prim construye el arbol paso a paso. Empezamos desde x1 como nodo raiz.
+En cada paso, examinamos todas las aristas que conectan un nodo ya visitado
+con uno no visitado, y seleccionamos la de MENOR distancia.
+
+Paso 1: se agrega x1-x5 con distancia 0.439. Paso 2: x5-x2 con 0.328.
+Paso 3: x5-x9 con 0.995.
+
+Aca en el paso 4 vemos que x9 se conecta a x6 con distancia CERO, porque
+tienen dependencia perfecta. Esto es correcto: no cuesta nada conectarlas.
+
+En el paso 5, x9 se conecta a x4 tambien con distancia cero.
+Paso 6: x9-x7. Paso 7: x7-x8, tambien con distancia cero porque x7 y x8
+son identicas. Paso 8: x7-x3 con distancia 0.193.
+
+El arbol final tiene 8 aristas con un costo total de 2.953798.
+x9 actua como hub central con grado 4, x5 y x7 como puentes secundarios
+con grado 3, y x1, x2, x3, x4, x6, x8 como hojas."
+
+
+================================================================================
+  SECCION 7 | 5:30 - 6:15 | MST - ALGORITMO DE KRUSKAL
+================================================================================
+
+[QUE MOSTRAR EN PANTALLA]
+  Segui avanzando en visual_mst.py. Entra a FASE 2 (Kruskal).
+  Avanza rapido los primeros pasos. Detenete en un paso donde se RECHACE
+  una arista (rojo punteado, paso 5: x3-x8).
+
+[QUE DECIR]
+"Kruskal toma un enfoque diferente. Ordena las 36 aristas de menor a mayor
+distancia y las procesa una por una usando una estructura Union-Find.
+
+Si la arista conecta dos nodos de componentes diferentes, se acepta.
+Si ambos nodos ya estan en la misma componente, se rechaza porque
+formaria un ciclo.
+
+Vemos aca como las primeras aristas se aceptan porque tienen distancia cero.
+Pero en el paso 5, la arista x3-x8 es RECHAZADA. Por que? Porque x3 y x8
+ya estan conectadas a traves de x7. Agregar esta arista crearia un ciclo.
+
+Despues de evaluar 14 aristas, obtenemos 8 aceptadas con el mismo costo
+total que Prim: 2.953798. Esto valida que ambos algoritmos encuentran
+el mismo arbol optimo."
+
+
+================================================================================
+  SECCION 8 | 6:15 - 7:00 | MIN vs MAX
+================================================================================
+
+[QUE MOSTRAR EN PANTALLA]
+  Avanza a FASE 3 y FASE 4 de visual_mst.py (Prim MAX y Kruskal MAX).
+  Cuando llegue a FASE 5 (comparacion 4 arboles), explica.
+
+[QUE DECIR]
+"Ademas del MST clasico con distancias, implementamos el enfoque MAX
+usando directamente la Informacion Mutua como peso de cada arista.
+
+En el enfoque MAX, seleccionamos las aristas de MAYOR MI en cada paso.
+Esto produce un arbol donde los pesos son positivos, sin ceros, y reflejan
+directamente la dependencia entre variables.
+
+Aca vemos los 4 arboles lado a lado: Prim y Kruskal para MIN con distancias,
+y Prim y Kruskal para MAX con MI directa.
+
+El costo MIN es 2.95 y el MAX es 4.62. Ambos algoritmos coinciden en los
+dos enfoques. La diferencia clave es que MIN tiene 3 aristas con peso cero
+mientras que MAX no tiene ninguna, lo que lo hace mas intuitivo para
+interpretar."
+
+
+================================================================================
+  SECCION 9 | 7:00 - 8:15 | BEST vs WORST
+================================================================================
+
+[QUE MOSTRAR EN PANTALLA]
+  Cambia a la carpeta proyecto_y_split.
+  Ejecuta: python pipeline_comparar.py (mostrar la salida de consola)
+  Luego ejecuta: python visual_split.py
+  Muestra las matrices IM de BEST y WORST (ENTER en cada una).
+  Despues los arboles individuales y la comparacion final.
+
+[QUE DECIR]
+"Ahora pasamos al analisis comparativo BEST versus WORST.
+
+Primero, detectamos que x7 y x8 son columnas identicas en el dataset,
+asi que las combinamos en una sola variable Y. Y se usa UNICAMENTE para
+particionar: BEST donde Y es 1, con 502 registros, y WORST donde Y es 0,
+con 498 registros.
+
+MUY IMPORTANTE: Y NO se incluye en los archivos CSV de analisis. Los CSVs
+tienen solo 7 variables: x1, x2, x3, x4, x5, x6 y x9. Si incluyeramos Y
+en los CSVs, Y seria constante en cada grupo, su entropia seria cero y
+todas las aristas hacia Y tendrian distancia cero, degenerando el arbol MIN.
+
+Al excluir Y, ejecutamos el pipeline sobre 7 variables en cada grupo.
+El arbol MIN ahora tiene costos REALES: 2.782 en BEST y 2.723 en WORST.
+El arbol MAX tiene costos 2.834 en BEST y 2.809 en WORST.
+
+Vemos que los costos MIN son diferentes entre BEST y WORST, con 5 de las
+6 aristas en comun. Esto confirma que las dependencias entre variables
+cambian segun el contexto definido por Y, y la variable x3 es la mas
+sensible: su entropia varia en -0.069 entre BEST y WORST."
+
+
+================================================================================
+  SECCION 10 | 8:15 - 9:15 | HALLAZGOS CLAVE
+================================================================================
+
+[QUE MOSTRAR EN PANTALLA]
+  Abri el archivo resultados_split.xlsx o pipeline_comparar.py
+  Mostra la tabla de comparacion BEST vs WORST.
+  O mostra una diapositiva en Canva con el resumen.
+
+[QUE DECIR]
+"Resumiendo los hallazgos principales de este trabajo:
+
+Primero: x7 y x8 son columnas identicas con cero diferencias en 1000 filas.
+El algoritmo detecta esto automaticamente a traves de MI igual a la entropia.
+Se combinaron en Y, usandola solo como criterio de particion.
+
+Segundo: x9 es el hub central del arbol con grado 3-4 y la mayor entropia,
+1.72 bits, por tener 4 valores posibles.
+
+Tercero: se identificaron 2 pares con dependencia perfecta y distancia cero:
+x4 con x9 y x6 con x9. Estos pares se mantienen en ambos grupos BEST y WORST.
+
+Cuarto: los algoritmos de Prim y Kruskal coinciden en el costo total para
+ambos enfoques, MIN y MAX, validando la implementacion.
+
+Quinto: el analisis BEST versus WORST demuestra que la topologia del arbol
+cambia segun el contexto. El costo MIN difiere: 2.782 en BEST vs 2.723 en
+WORST, con 5 de 6 aristas en comun. La variable x3 es la mas sensible al
+contexto de Y.
+
+Y sexto: la variable de particion Y no debe incluirse como feature en el
+analisis de cada subconjunto. Se usa solo para particionar y luego se excluye
+de los CSVs, evitando asi la degeneracion del arbol MIN."
+
+
+================================================================================
+  SECCION 11 | 9:15 - 10:00 | CONCLUSIONES Y CIERRE
+================================================================================
+
+[QUE MOSTRAR EN PANTALLA]
+  Mostra la carpeta del proyecto con todos los archivos generados.
+  O abri el archivo informe_apa7.tex.
+
+[QUE DECIR]
+"En conclusion, se implemento exitosamente la secuencia funcional completa
+desde la entropia hasta el MST, tanto en su version minima como maxima,
+y se extendio el analisis al caso comparativo BEST versus WORST.
+
+El proyecto incluye:
+- Scripts de consola con todos los resultados numericos.
+- Visualizaciones interactivas paso a paso con matplotlib y networkx.
+- Un archivo Excel con hojas de calculo para cada etapa.
+- Una guia detallada para el portafolio fisico.
+- Un informe completo en formato LaTeX APA septima edicion.
+
+Todo el codigo fuente esta disponible en el repositorio que se indica en
+el informe, y los resultados son completamente reproducibles ejecutando
+los scripts proporcionados.
+
+Muchas gracias por su atencion. Quedo a disposicion para preguntas."
+
+
+================================================================================
+  RESUMEN DE TIEMPOS
+================================================================================
+
+  0:00 - 0:45   Introduccion                         45 seg
+  0:45 - 1:30   Dataset y frecuencias                45 seg
+  1:30 - 2:30   Entropia H(X)                        60 seg
+  2:30 - 3:30   Informacion Mutua I(X;Y)             60 seg
+  3:30 - 4:15   Matriz IM y Distancias               45 seg
+  4:15 - 5:30   Prim                                 75 seg
+  5:30 - 6:15   Kruskal                              45 seg
+  6:15 - 7:00   MIN vs MAX                           45 seg
+  7:00 - 8:15   BEST vs WORST                        75 seg
+  8:15 - 9:15   Hallazgos clave                      60 seg
+  9:15 - 10:00  Conclusiones y cierre                45 seg
+  ---------------------------------------------------------
+  TOTAL                                             600 seg = 10:00 min
+
+
+================================================================================
+  CHECKLIST PARA EL VIDEO
+================================================================================
+
+  [ ] Abrir terminal en la carpeta entropia/
+  [ ] Tener los scripts listos
+  [ ] Cerrar otras aplicaciones para que no interfieran
+  [ ] Probar el microfono antes de grabar
+  [ ] Grabar a 1080p o 720p
+  [ ] Ensayar una vez antes de la grabacion final
+  [ ] Verificar que las ventanas de matplotlib se vean bien en la grabacion
+
+================================================================================
+  FIN DEL GUION
+================================================================================
