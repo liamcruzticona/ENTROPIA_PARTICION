@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BEST vs WORST — Análisis Comparativo usando IM y Prim-Kruskal</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Georgia', 'Times New Roman', serif; background: #222; color: #222; }
+.slide {
+    display: none; width: 100vw; height: 100vh; padding: 50px 70px;
+    background: #fff; flex-direction: column; justify-content: center;
+    align-items: center; text-align: center; overflow-y: auto;
+}
+.slide.active { display: flex; }
+.slide.portada { background: linear-gradient(180deg, #fff 0%, #f5f5f5 100%); }
+.slide h1 { font-size: 2.0em; margin-bottom: 15px; color: #1a3a5c; }
+.slide h2 { font-size: 1.5em; margin-bottom: 20px; color: #1a3a5c; border-bottom: 2px solid #1a3a5c; padding-bottom: 8px; }
+.slide h3 { font-size: 1.1em; margin: 12px 0 6px 0; color: #2c3e50; text-align: left; width: 100%; }
+.slide p, .slide li { font-size: 1.05em; line-height: 1.7; margin: 4px 0; text-align: left; max-width: 85%; }
+.slide ul { text-align: left; max-width: 85%; margin: 0 auto; }
+.slide ul li { margin: 6px 0; }
+.slide table { border-collapse: collapse; margin: 15px auto; font-size: 0.85em; }
+.slide table th, .slide table td { border: 1px solid #ccc; padding: 5px 10px; text-align: center; }
+.slide table th { background: #1a3a5c; color: #fff; font-weight: bold; }
+.slide table td { background: #fff; }
+.slide table td.d0 { background: #ffcccc; font-weight: bold; }
+.slide table td.highlight { background: #ccffcc; font-weight: bold; }
+.slide .logo { max-width: 100px; margin-bottom: 10px; }
+.slide .formula { background: #f8f8f8; border-left: 4px solid #1a3a5c; padding: 12px 18px; margin: 10px 0; font-family: 'Courier New', monospace; text-align: left; font-size: 0.9em; max-width: 80%; }
+.slide .foto-placeholder { width: 75%; max-height: 50vh; background: #eee; border: 2px dashed #999; display: flex; align-items: center; justify-content: center; color: #999; font-size: 1.1em; margin: 10px 0; min-height: 200px; }
+.slide .foto-placeholder img { max-width: 100%; max-height: 50vh; }
+.slide .columns { display: flex; gap: 30px; width: 90%; text-align: left; }
+.slide .columns div { flex: 1; }
+.slide .small { font-size: 0.85em; }
+.slide .repo-link { font-size: 1.3em; color: #1a3a5c; font-weight: bold; margin: 15px 0; }
+.slide .step { display: flex; align-items: flex-start; margin: 3px 0; text-align: left; }
+.slide .step-num { background: #1a3a5c; color: #fff; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 0.7em; margin-right: 8px; flex-shrink: 0; }
+.pseudocode { background: #f4f4f4; border: 1px solid #ddd; padding: 15px 20px; font-family: 'Courier New', monospace; font-size: 0.80em; text-align: left; max-width: 80%; line-height: 1.5; border-radius: 5px; }
+.pseudocode .kw { color: #0033cc; font-weight: bold; }
+.pseudocode .cm { color: #888; font-style: italic; }
+.nav { position: fixed; bottom: 15px; right: 20px; font-size: 0.8em; color: #888; background: rgba(255,255,255,0.9); padding: 4px 10px; border-radius: 12px; z-index: 10; }
+.nav span { margin: 0 3px; cursor: pointer; }
+@media print {
+    body { background: #fff; }
+    .slide { display: flex !important; page-break-after: always; height: auto; min-height: 100vh; padding: 30px; }
+    .nav { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===================================================== -->
+<!-- SLIDE 1: PORTADA -->
+<!-- ===================================================== -->
+<div class="slide portada active" id="s1">
+    <img src="logo.png" alt="UNA" class="logo" onerror="this.style.display='none'" />
+    <p style="font-size:1.1em;color:#1a3a5c;font-weight:bold;">UNIVERSIDAD NACIONAL DEL ALTIPLANO</p>
+    <p style="font-size:0.9em;color:#555;">Facultad de Ingeniería Mecánica Eléctrica, Electrónica y Sistemas</p>
+    <p style="font-size:0.9em;color:#555;">Escuela Profesional de Ingeniería de Sistemas</p>
+    <hr style="width:60%;margin:20px auto;border-color:#1a3a5c;" />
+    <h1 style="border-bottom:none;font-size:1.7em;">Análisis Comparativo de la Topología<br>del Árbol de Expansión entre los Grupos<br>BEST y WORST usando Información Mutua<br>y Algoritmos de Prim-Kruskal</h1>
+    <hr style="width:60%;margin:20px auto;border-color:#1a3a5c;" />
+    <p style="font-size:1.1em;margin-top:20px;"><strong>Presentado por:</strong><br>Huanacuni Ccama Jhon Edy</p>
+    <p style="font-size:0.95em;margin-top:15px;"><strong>Curso:</strong> Lenguajes de Programación</p>
+    <p style="font-size:0.95em;"><strong>Docente:</strong> ING. JOSE LUIS JUAREZ RUELAS</p>
+    <p style="font-size:0.95em;"><strong>Semestre:</strong> 2026-I</p>
+</div>
+
+<!-- ===================================================== -->
+<!-- SLIDE 2: DATASET -->
+<!-- ===================================================== -->
+<div class="slide" id="s2">
+    <h2>Dataset y Split BEST / WORST</h2>
+    <ul>
+        <li><strong>d9_strong.txt:</strong> 1000 registros × 9 variables (x₁ a x₉)</li>
+        <li>Datos discretizados: valores en {0, 1, 2, 3}</li>
+        <li><strong>x₇ y x₈ son idénticas</strong> (0 diferencias en 1000 filas)</li>
+    </ul>
+    <div class="formula">
+        <strong>Combinación:</strong> Y = x₇ = x₈ &nbsp;&nbsp;(variable de partición)<br>
+        <strong>Uso de Y:</strong> SOLO para particionar, NO se incluye en los CSVs
+    </div>
+    <div class="columns" style="margin-top:15px;">
+        <div>
+            <h3>BEST (Y=1)</h3>
+            <p>502 registros<br>7 variables:<br>x₁, x₂, x₃, x₄, x₅, x₆, x₉<br><br>21 pares de MI<br>6 aristas en el MST</p>
+        </div>
+        <div>
+            <h3>WORST (Y=0)</h3>
+            <p>498 registros<br>7 variables:<br>x₁, x₂, x₃, x₄, x₅, x₆, x₉<br><br>21 pares de MI<br>6 aristas en el MST</p>
+        </div>
+    </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- SLIDE 3: ENTROPIA H(x5) -->
+<!-- ===================================================== -->
+<div class="slide" id="s3">
+    <h2>Entropía de Shannon — H(x₅)</h2>
+    <div class="formula"><strong>Fórmula:</strong> H(X) = −Σ P(x) · log₂ P(x)</div>
+    <div class="foto-placeholder">
+        <img src="foto_hx5.jpg" alt="Desarrollo manual de H(x5)"
+             onerror="this.parentNode.innerHTML='<p style=color:#999>[INSERTAR FOTO DEL DESARROLLO MANUAL DE H(x5)]</p>'" />
+    </div>
+    <p style="margin-top:10px;"><strong>Resultado:</strong> H(x₅) = 1.4140 bits &nbsp;&nbsp;(H<sub>max</sub> = 1.5850 para 3 valores)</p>
+    <table style="margin-top:10px;">
+        <tr><th>Variable</th><th>BEST</th><th>WORST</th><th>ΔH</th></tr>
+        <tr><td>x₁</td><td>0.7586</td><td>0.7354</td><td>+0.0232</td></tr>
+        <tr><td>x₂</td><td>0.9991</td><td>0.9986</td><td>+0.0005</td></tr>
+        <tr><td>x₃</td><td>0.6741</td><td>0.7431</td><td style="font-weight:bold;color:#c0392b;">−0.0690</td></tr>
+        <tr><td>x₄</td><td>0.7475</td><td>0.6860</td><td>+0.0614</td></tr>
+        <tr><td>x₅</td><td>1.4116</td><td>1.4162</td><td>−0.0046</td></tr>
+        <tr><td>x₆</td><td>0.9974</td><td>0.9998</td><td>−0.0024</td></tr>
+        <tr><td>x₉</td><td>1.7448</td><td>1.6854</td><td>+0.0593</td></tr>
+    </table>
+    <p class="small" style="margin-top:5px;">x₃ es la variable más sensible al contexto de Y (ΔH = −0.0690)</p>
+</div>
+
+<!-- ===================================================== -->
+<!-- SLIDE 4: INFORMACION MUTUA -->
+<!-- ===================================================== -->
+<div class="slide" id="s4">
+    <h2>Información Mutua — I(x₁; x₅)</h2>
+    <div class="formula"><strong>Fórmula:</strong> I(X;Y) = ΣΣ P(x,y) · log₂( P(x,y) / P(x)·P(y) )</div>
+    <div class="foto-placeholder">
+        <img src="foto_mix1x5.jpg" alt="Desarrollo manual de I(x1;x5)"
+             onerror="this.parentNode.innerHTML='<p style=color:#999>[INSERTAR FOTO DEL DESARROLLO MANUAL DE I(x1;x5)]</p>'" />
+    </div>
+    <p style="margin-top:10px;"><strong>Resultado:</strong> I(x₁;x₅) = 0.4191 bits &nbsp;→&nbsp; comparten el 56% de H(x₁)</p>
+    <table style="margin-top:10px;">
+        <tr><th colspan="4">Pares con mayor MI (matriz 7×7)</th></tr>
+        <tr><td><strong>x₆ — x₉</strong></td><td>0.9997</td><td><strong>x₄ — x₉</strong></td><td>0.7475</td></tr>
+        <tr><td><strong>x₅ — x₂</strong></td><td>0.6555</td><td><strong>x₁ — x₅</strong></td><td>0.4150</td></tr>
+    </table>
+</div>
+
+<!-- ===================================================== -->
+<!-- SLIDE 5: MATRIZ IM + DISTANCIAS -->
+<!-- ===================================================== -->
+<div class="slide" id="s5">
+    <h2>Matriz IM y Conversión a Distancia</h2>
+    <div class="formula" style="text-align:center;">
+        <strong>d(i,j) = 1 − MI(i,j) / min( H(i), H(j) )</strong><br>
+        d = 0 → dependencia perfecta &nbsp;|&nbsp; d = 1 → independencia total
+    </div>
+    <h3 style="text-align:center;">Matriz de Distancias 7×7 — BEST</h3>
+    <table style="margin-top:5px;">
+        <tr><th></th><th>x₁</th><th>x₂</th><th>x₃</th><th>x₄</th><th>x₅</th><th>x₆</th><th>x₉</th></tr>
+        <tr><th>x₁</th><td>0.00</td><td>0.99</td><td>0.99</td><td>1.00</td><td>0.45</td><td>0.99</td><td>0.99</td></tr>
+        <tr><th>x₂</th><td>0.99</td><td>0.00</td><td>0.99</td><td>0.99</td><td>0.34</td><td>0.99</td><td>0.99</td></tr>
+        <tr><th>x₃</th><td>0.99</td><td>0.99</td><td>0.00</td><td>1.00</td><td>0.99</td><td>0.99</td><td>0.99</td></tr>
+        <tr><th>x₄</th><td>1.00</td><td>0.99</td><td>1.00</td><td>0.00</td><td>0.99</td><td>1.00</td><td class="d0">0.00</td></tr>
+        <tr><th>x₅</th><td>0.45</td><td>0.34</td><td>0.99</td><td>0.99</td><td>0.00</td><td>0.99</td><td>0.99</td></tr>
+        <tr><th>x₆</th><td>0.99</td><td>0.99</td><td>0.99</td><td>1.00</td><td>0.99</td><td>0.00</td><td class="d0">0.00</td></tr>
+        <tr><th>x₉</th><td>0.99</td><td>0.99</td><td>0.99</td><td class="d0">0.00</td><td>0.99</td><td class="d0">0.00</td><td>0.00</td></tr>
+    </table>
+    <p style="margin-top:8px;"><span class="d0" style="padding:2px 8px;">&nbsp;&nbsp;&nbsp;&nbsp;</span> = d=0 (dependencia perfecta) &nbsp;&nbsp; <strong>2 pares: x₄−x₉ y x₆−x₉</strong></p>
+</div>
+
+<!-- ===================================================== -->
+<!-- SLIDE 6: PRIM -->
+<!-- ===================================================== -->
+<div class="slide" id="s6">
+    <h2>Algoritmo de Prim — Árbol de Expansión Mínima</h2>
+    <div class="columns">
+        <div>
+            <h3>Pseudocódigo</h3>
+            <div class="pseudocode">
+                <span class="kw">Función</span> Prim(D[n][n])<br>
+                &nbsp;&nbsp;V ← {0}<br>
+                &nbsp;&nbsp;E ← {}<br>
+                &nbsp;&nbsp;<span class="kw">mientras</span> |V| &lt; n:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;mejor ← ∞<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">para</span> u en V:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">para</span> v no en V:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">si</span> D[u][v] &lt; mejor:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mejor ← D[u][v]<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(u*,v*) ← (u,v)<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;V ← V ∪ {v*}<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;E ← E ∪ {(u*,v*,mejor)}<br>
+                &nbsp;&nbsp;<span class="kw">retornar</span> E
+            </div>
+        </div>
+        <div>
+            <h3>Resultados (6 aristas)</h3>
+            <table style="width:100%;">
+                <tr><th colspan="2">BEST (2.7821)</th></tr>
+                <tr><td>x₉ — x₄</td><td class="d0">0.000</td></tr>
+                <tr><td>x₉ — x₆</td><td class="d0">0.000</td></tr>
+                <tr><td>x₅ — x₂</td><td>0.344</td></tr>
+                <tr><td>x₁ — x₅</td><td>0.453</td></tr>
+                <tr><td>x₅ — x₉</td><td>0.989</td></tr>
+                <tr><td>x₁ — x₃</td><td>0.997</td></tr>
+            </table>
+            <table style="width:100%;margin-top:8px;">
+                <tr><th colspan="2">WORST (2.7232)</th></tr>
+                <tr><td>x₉ — x₆</td><td class="d0">0.000</td></tr>
+                <tr><td>x₉ — x₄</td><td class="d0">0.000</td></tr>
+                <tr><td>x₅ — x₂</td><td>0.312</td></tr>
+                <tr><td>x₁ — x₅</td><td>0.424</td></tr>
+                <tr><td>x₉ — x₃</td><td>0.992</td></tr>
+                <tr><td>x₅ — x₉</td><td>0.995</td></tr>
+            </table>
+            <p class="small"><strong>Aristas en común:</strong> 5/6 (83%)</p>
+        </div>
+    </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- SLIDE 7: KRUSKAL -->
+<!-- ===================================================== -->
+<div class="slide" id="s7">
+    <h2>Algoritmo de Kruskal con Union-Find</h2>
+    <div class="columns">
+        <div>
+            <h3>Kruskal</h3>
+            <div class="pseudocode">
+                <span class="kw">Función</span> Kruskal(D[n][n])<br>
+                &nbsp;&nbsp;E ← {}<br>
+                &nbsp;&nbsp;A ← ordenar aristas por D asc.<br>
+                &nbsp;&nbsp;UF ← UnionFind(n)<br>
+                &nbsp;&nbsp;<span class="kw">para</span> (d,u,v) en A:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">si</span> Find(u) ≠ Find(v):<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Union(u,v)<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;E ← E ∪ {(u,v,d)}<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">si</span> |E|=n−1: romper<br>
+                &nbsp;&nbsp;<span class="kw">retornar</span> E
+            </div>
+        </div>
+        <div>
+            <h3>Union-Find</h3>
+            <div class="pseudocode">
+                <span class="kw">Función</span> Find(x):<br>
+                &nbsp;&nbsp;<span class="kw">si</span> parent[x] ≠ x:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;parent[x] ← Find(parent[x])<br>
+                &nbsp;&nbsp;<span class="kw">retornar</span> parent[x]<br><br>
+                <span class="kw">Función</span> Union(x,y):<br>
+                &nbsp;&nbsp;rx ← Find(x), ry ← Find(y)<br>
+                &nbsp;&nbsp;<span class="kw">si</span> rx = ry: retornar falso<br>
+                &nbsp;&nbsp;<span class="cm">// Unión por rango</span><br>
+                &nbsp;&nbsp;<span class="kw">si</span> rank[rx] &lt; rank[ry]:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;parent[rx] ← ry<br>
+                &nbsp;&nbsp;<span class="kw">sino</span>: ...<br>
+                &nbsp;&nbsp;<span class="kw">retornar</span> verdadero
+            </div>
+        </div>
+    </div>
+    <p style="margin-top:15px;"><strong>Complejidad:</strong> O(E log E) = O(21 log 21) &nbsp;|&nbsp; <strong>Resultado:</strong> mismo árbol que Prim para ambos grupos</p>
+</div>
+
+<!-- ===================================================== -->
+<!-- SLIDE 8: MIN vs MAX -->
+<!-- ===================================================== -->
+<div class="slide" id="s8">
+    <h2>Comparación MIN (distancias) vs MAX (MI directa)</h2>
+    <table style="font-size:0.95em;">
+        <tr><th>Característica</th><th>MIN (distancias)</th><th>MAX (MI directa)</th></tr>
+        <tr><td>Peso de arista</td><td>d = 1 − MI/min(H)</td><td>w = MI</td></tr>
+        <tr><td>Criterio</td><td>Selecciona <strong>menor</strong> peso</td><td>Selecciona <strong>mayor</strong> peso</td></tr>
+        <tr><td>Costo Prim BEST</td><td>2.782115</td><td>2.833722</td></tr>
+        <tr><td>Costo Prim WORST</td><td>2.723224</td><td>2.809188</td></tr>
+        <tr><td>Prim = Kruskal</td><td>✅ Sí</td><td>✅ Sí</td></tr>
+        <tr><td>Pesos cero</td><td>Sí (2 aristas: d=0)</td><td>No</td></tr>
+        <tr><td>Interpretación</td><td>MST clásico de grafos</td><td>Pesos positivos, más intuitivo</td></tr>
+    </table>
+    <p style="margin-top:15px;">Ambos enfoques son matemáticamente válidos. La diferencia clave es que MIN puede tener aristas con d=0 (dependencia perfecta), mientras que MAX tiene todos los pesos > 0.</p>
+</div>
+
+<!-- ===================================================== -->
+<!-- SLIDE 9: BEST vs WORST -->
+<!-- ===================================================== -->
+<div class="slide" id="s9">
+    <h2>Comparación BEST vs WORST</h2>
+    <table style="font-size:0.95em;">
+        <tr><th>Métrica</th><th>BEST (Y=1)</th><th>WORST (Y=0)</th></tr>
+        <tr><td>Registros</td><td>502</td><td>498</td></tr>
+        <tr><td>Variables (sin Y)</td><td>7</td><td>7</td></tr>
+        <tr><td>Pares MI</td><td>21</td><td>21</td></tr>
+        <tr><td>Aristas MST</td><td>6</td><td>6</td></tr>
+        <tr><td>Costo Prim MIN</td><td>2.782115</td><td>2.723224</td></tr>
+        <tr><td>Costo Kruskal MIN</td><td>2.782115</td><td>2.723224</td></tr>
+        <tr><td>Costo Prim MAX</td><td>2.833722</td><td>2.809188</td></tr>
+        <tr><td>Costo Kruskal MAX</td><td>2.833722</td><td>2.809188</td></tr>
+        <tr><td>Aristas MIN en común</td><td colspan="2">5/6 (83%)</td></tr>
+        <tr><td>Pares con d=0</td><td>x₄−x₉, x₆−x₉</td><td>x₄−x₉, x₆−x₉</td></tr>
+    </table>
+    <div class="formula" style="margin-top:12px;">
+        <strong>Variable más sensible al contexto de Y:</strong><br>
+        x₃ &nbsp;→&nbsp; ΔH = H<sub>BEST</sub> − H<sub>WORST</sub> = −0.0690<br>
+        Las dependencias entre variables <strong>cambian</strong> según el contexto definido por Y.
+    </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- SLIDE 10: HALLAZGOS -->
+<!-- ===================================================== -->
+<div class="slide" id="s10">
+    <h2>Hallazgos y Conclusiones</h2>
+    <div style="max-width:85%;text-align:left;">
+        <div class="step"><span class="step-num">1</span><span><strong>Redundancia detectada:</strong> x₇ y x₈ son columnas idénticas. Se combinaron en Y, usada solo para particionar. Sin Y en los CSVs: 7 variables reales con costos de árbol reales.</span></div>
+        <div class="step" style="margin-top:10px;"><span class="step-num">2</span><span><strong>Hub central:</strong> x₉ es el nodo con mayor entropía (1.72 bits, 4 valores). Actúa como hub del árbol con grado 3-4 en ambos grupos.</span></div>
+        <div class="step" style="margin-top:10px;"><span class="step-num">3</span><span><strong>Dependencia perfecta:</strong> 2 pares con d=0 — x₄−x₉ y x₆−x₉. Estos pares se mantienen tanto en BEST como en WORST.</span></div>
+        <div class="step" style="margin-top:10px;"><span class="step-num">4</span><span><strong>Validación:</strong> Prim y Kruskal coinciden en costo para ambos enfoques (MIN y MAX), verificando la implementación.</span></div>
+        <div class="step" style="margin-top:10px;"><span class="step-num">5</span><span><strong>Cambio topológico:</strong> Los costos MIN difieren (2.782 vs 2.723), 5/6 aristas en común. x₃ es la variable más sensible a Y (ΔH = −0.069).</span></div>
+    </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- SLIDE 11: CIERRE -->
+<!-- ===================================================== -->
+<div class="slide" id="s11">
+    <h2>Repositorio y Cierre</h2>
+    <div class="repo-link">github.com/liamcruzticona/ENTROPIA_PARTICION</div>
+    <ul style="max-width:75%;">
+        <li>Scripts de pipeline y visualización (Python)</li>
+        <li>Archivos CSV de datos (BEST y WORST)</li>
+        <li>Excel con hojas de cálculo</li>
+        <li>Informe en formato APA 7ª edición (LaTeX)</li>
+        <li>Video de exposición (10 minutos)</li>
+    </ul>
+    <hr style="width:50%;margin:20px auto;border-color:#ccc;" />
+    <p style="font-size:1.2em;"><strong>Gracias por su atención</strong></p>
+    <p style="color:#888;margin-top:10px;">¿Preguntas?</p>
+    <img src="logo.png" alt="UNA" class="logo" style="margin-top:20px;" onerror="this.style.display='none'" />
+</div>
+
+<!-- ===================================================== -->
+<!-- NAVEGACION -->
+<!-- ===================================================== -->
+<div class="nav">
+    <span onclick="go(-1)" title="Anterior">◀</span>
+    <span id="pageNum">1 / 11</span>
+    <span onclick="go(1)" title="Siguiente">▶</span>
+</div>
+
+<script>
+let current = 0;
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+
+function show(n) {
+    slides[current].classList.remove('active');
+    current = (n + total) % total;
+    slides[current].classList.add('active');
+    document.getElementById('pageNum').textContent = (current+1) + ' / ' + total;
+}
+function go(dir) { show(current + dir); }
+document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); go(1); }
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                  { e.preventDefault(); go(-1); }
+    if (e.key === 'Home') { e.preventDefault(); show(0); }
+    if (e.key === 'End')  { e.preventDefault(); show(total-1); }
+});
+</script>
+
+</body>
+</html>
