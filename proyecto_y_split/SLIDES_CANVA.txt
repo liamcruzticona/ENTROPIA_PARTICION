@@ -1,0 +1,260 @@
+================================================================================
+  SLIDES PARA CANVA - 11 DIAPOSITIVAS
+  Proyecto: BEST vs WORST usando IM y Prim-Kruskal
+================================================================================
+
+INSTRUCCIONES:
+  - Copia cada bloque de texto a una diapositiva de Canva.
+  - Usa fuente clara (Arial, Montserrat o similar), tamaño 24-32 para titulos.
+  - Las slides 3 y 4 llevan FOTO de tu desarrollo manuscrito.
+  - Los textos entre [corchetes] son instrucciones, NO los copies a Canva.
+  - Pone el logo de la UNA en las slides 1 y 11.
+
+
+================================================================================
+  SLIDE 1 - PORTADA
+================================================================================
+
+UNIVERSIDAD NACIONAL DEL ALTIPLANO
+FACULTAD DE INGENIERIA MECANICA ELECTRICA, ELECTRONICA Y SISTEMAS
+ESCUELA PROFESIONAL DE INGENIERIA DE SISTEMAS
+
+[LOGO UNA]
+
+ANALISIS COMPARATIVO DE LA TOPOLOGIA DEL ARBOL DE EXPANSION
+ENTRE LOS GRUPOS BEST Y WORST USANDO INFORMACION MUTUA
+Y ALGORITMOS DE PRIM-KRUSKAL
+
+PRESENTADO POR:
+Huanacuni Ccama Jhon Edy
+
+CURSO: Lenguajes de Programacion
+DOCENTE: ING. JOSE LUIS JUAREZ RUELAS
+SEMESTRE: 2026-I
+
+
+================================================================================
+  SLIDE 2 - DATASET Y SPLIT
+================================================================================
+
+DATASET: d9_strong.txt
+
+- 1000 registros x 9 variables categoricas (x1 a x9)
+- Valores discretos: 0, 1, 2, 3
+- Datos pre-discretizados (no requiere discretizacion adicional)
+
+DETECCION DE REDUNDANCIA:
+- x7 y x8 son columnas identicas (0 diferencias en 1000 filas)
+- Se combinan en Y = x7
+
+SPLIT BEST vs WORST:
+- Y se usa SOLO como criterio de particion
+- Y NO se incluye en los archivos CSV de analisis
+
+     BEST (Y=1): 502 registros x 7 variables (x1,x2,x3,x4,x5,x6,x9)
+     WORST (Y=0): 498 registros x 7 variables (x1,x2,x3,x4,x5,x6,x9)
+
+
+================================================================================
+  SLIDE 3 - ENTROPIA H(x5)
+================================================================================
+
+CALCULO MANUAL DE ENTROPIA
+
+Formula: H(X) = -SUM P(x) * log2 P(x)
+
+[INSERTAR FOTO DE TU HOJA MANUSCRITA CON EL DESARROLLO DE H(x5)]
+
+Resultado: H(x5) = 1.4140 bits (Hmax = 1.5850 para 3 valores)
+
+TABLA DE ENTROPIAS (7 variables):
+
+  Variable   BEST       WORST      Diferencia
+  x1         0.7586     0.7354     +0.0232
+  x2         0.9991     0.9986     +0.0005
+  x3         0.6741     0.7431     -0.0690  <-- Mayor cambio
+  x4         0.7475     0.6860     +0.0614
+  x5         1.4116     1.4162     -0.0046
+  x6         0.9974     0.9998     -0.0024
+  x9         1.7448     1.6854     +0.0593
+
+
+================================================================================
+  SLIDE 4 - INFORMACION MUTUA I(x1;x5)
+================================================================================
+
+CALCULO MANUAL DE INFORMACION MUTUA
+
+Formula: I(X;Y) = SUMA SUMA P(x,y) * log2( P(x,y) / P(x)*P(y) )
+
+[INSERTAR FOTO DE TU HOJA MANUSCRITA CON TABLA DE CONTINGENCIA Y DESARROLLO]
+
+Resultado: I(x1;x5) = 0.4191 bits
+Interpretacion: x1 y x5 comparten el 56% de la informacion de x1
+
+Pares con mayor MI (matriz 7x7):
+  x6-x9: 0.9997 (dependencia casi perfecta)
+  x4-x9: 0.7475 (dependencia perfecta en BEST)
+  x5-x2: 0.6555 (relacion fuerte)
+
+
+================================================================================
+  SLIDE 5 - MATRIZ IM Y DISTANCIAS
+================================================================================
+
+CONVERSION A DISTANCIA
+
+  d(i,j) = 1 - MI(i,j) / min( H(i), H(j) )
+
+  d = 0: maxima dependencia (variables identicas)
+  d = 1: independencia total
+
+MATRIZ DE DISTANCIAS 7x7 (BEST):
+
+          x1     x2     x3     x4     x5     x6     x9
+  x1     0.00   0.99   0.99   1.00   0.45   0.99   0.99
+  x2     0.99   0.00   0.99   0.99   0.34   0.99   0.99
+  x3     0.99   0.99   0.00   1.00   0.99   0.99   0.99
+  x4     1.00   0.99   1.00   0.00   0.99   1.00   0.00  <-- d=0
+  x5     0.45   0.34   0.99   0.99   0.00   0.99   0.99
+  x6     0.99   0.99   0.99   1.00   0.99   0.00   0.00  <-- d=0
+  x9     0.99   0.99   0.99   0.00   0.99   0.00   0.00
+
+2 pares con d=0 (dependencia perfecta): x4-x9 y x6-x9
+
+
+================================================================================
+  SLIDE 6 - ALGORITMO DE PRIM
+================================================================================
+
+PRIM - ARBOL DE EXPANSION MINIMA
+
+Pseudocodigo:
+  V = {nodo_inicial}
+  E = {}
+  Mientras |V| < n:
+      Buscar arista (u,v) con u en V, v no en V, de MENOR distancia
+      V = V + {v}
+      E = E + {(u,v)}
+
+Resultados (6 aristas, sin Y):
+
+BEST (costo 2.782115):        WORST (costo 2.723224):
+  x9 -- x4  d=0.000              x9 -- x6  d=0.000
+  x9 -- x6  d=0.000              x9 -- x4  d=0.000
+  x5 -- x2  d=0.344              x5 -- x2  d=0.312
+  x1 -- x5  d=0.453              x1 -- x5  d=0.424
+  x5 -- x9  d=0.989              x9 -- x3  d=0.992
+  x1 -- x3  d=0.997              x5 -- x9  d=0.995
+
+Aristas en comun: 5/6 (83%)
+
+
+================================================================================
+  SLIDE 7 - ALGORITMO DE KRUSKAL
+================================================================================
+
+KRUSKAL CON UNION-FIND
+
+Pseudocodigo:
+  Ordenar las 21 aristas por distancia (menor a mayor)
+  UF = UnionFind(n)
+  Para cada arista (d,u,v) en orden:
+      Si Find(u) != Find(v):
+          Union(u,v)
+          Agregar arista al arbol
+      Si |aristas| = n-1: terminar
+
+Union-Find:
+  Find(x): compresion de ruta -> O(alpha(n))
+  Union(x,y): union por rango -> O(alpha(n))
+
+Complejidad: O(E log E) = O(21 log 21) = instantaneo
+
+Resultado: MISMO arbol que Prim. Prim=Kruskal en ambos enfoques.
+
+
+================================================================================
+  SLIDE 8 - MIN vs MAX
+================================================================================
+
+COMPARACION MIN vs MAX
+
+  Caracteristica         MIN (distancias)       MAX (MI directa)
+  -------------------------------------------------------------
+  Peso de arista         d = 1-MI/min(H)        w = MI
+  Criterio               Menor primero           Mayor primero
+  Costo Prim BEST        2.782115                2.833722
+  Costo Prim WORST       2.723224                2.809188
+  Prim = Kruskal         SI                      SI
+  Pesos cero             SI (2 aristas)          NO
+
+Ambos enfoques son matematicamente validos.
+MIN: clasico de teoria de grafos. MAX: mas intuitivo, sin ceros.
+
+
+================================================================================
+  SLIDE 9 - BEST vs WORST: COMPARACION
+================================================================================
+
+COMPARACION BEST vs WORST
+
+  Metrica                  BEST (Y=1)        WORST (Y=0)
+  -------------------------------------------------------
+  Registros                502               498
+  Variables                7                 7
+  Pares MI                 21                21
+  Costo MIN                2.782115          2.723224
+  Costo MAX                2.833722          2.809188
+  Aristas MIN en comun     5/6 (83%)
+  Pares con d=0            2 (x4-x9, x6-x9)  2 (x4-x9, x6-x9)
+
+Variable mas sensible al contexto de Y:
+  x3: DeltaH = -0.069 (mayor cambio de entropia entre grupos)
+
+CONCLUSION: Las dependencias entre variables cambian segun el contexto
+definido por Y. La topologia del arbol se modifica, con 1 arista diferente
+entre BEST y WORST.
+
+
+================================================================================
+  SLIDE 10 - HALLAZGOS Y CONCLUSIONES
+================================================================================
+
+HALLAZGOS PRINCIPALES
+
+1. REDUNDANCIA: x7 y x8 son columnas identicas. Se combinaron en Y,
+   usada solo para particionar los datos.
+
+2. HUB CENTRAL: x9 es el nodo con mayor entropia (1.72 bits) y actua
+   como hub central del arbol de expansion.
+
+3. DEPENDENCIA PERFECTA: 2 pares con d=0 (x4-x9, x6-x9). Estos pares
+   se mantienen en ambos grupos BEST y WORST.
+
+4. VALIDACION: Prim y Kruskal coinciden en costo para ambos enfoques
+   (MIN y MAX), verificando la implementacion.
+
+5. CAMBIO TOPOLOGICO: Los costos MIN difieren (2.78 vs 2.72) y x3
+   es la variable mas sensible al contexto de Y (DeltaH = -0.069).
+
+
+================================================================================
+  SLIDE 11 - CIERRE
+================================================================================
+
+REPOSITORIO DE CODIGO FUENTE
+
+github.com/liamcruzticona/ENTROPIA_PARTICION
+
+[LOGO UNA]
+
+El proyecto incluye:
+- Scripts de pipeline y visualizacion (Python)
+- Archivos CSV de datos (BEST y WORST)
+- Excel con hojas de calculo
+- Informe en formato APA 7ma edicion
+- Video de exposicion (10 minutos)
+
+GRACIAS POR SU ATENCION
+¿Preguntas?

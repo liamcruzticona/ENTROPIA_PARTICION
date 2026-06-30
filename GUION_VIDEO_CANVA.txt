@@ -1,0 +1,310 @@
+================================================================================
+  GUION DE VIDEO - 10 MINUTOS - FORMATO CANVA + LIVE PYTHON
+  Pipeline: Entropia -> IM -> MST + BEST vs WORST
+================================================================================
+
+INSTRUCCIONES:
+  - Abri Canva con las 11 diapositivas listas ANTES de grabar.
+  - Abri una terminal en la carpeta del proyecto.
+  - Alterna entre Canva (diapositivas) y Live Python (ventanas de matplotlib).
+  - Lee este guion. Habla despacio y claro.
+  - Duracion total: 10 minutos exactos.
+
+
+================================================================================
+  SLIDE 1 | 0:00 - 0:30 | PORTADA (Canva)
+================================================================================
+
+[QUE SE VE EN PANTALLA]
+  Diapositiva 1 de Canva: Portada con titulo, autor, UNA, logo.
+
+[QUE DECIR]
+"Buenos dias. Soy Jhon Edy Huanacuni Ccama, de la Universidad Nacional
+del Altiplano, Escuela de Ingenieria de Sistemas. Presento el analisis
+comparativo de la topologia del arbol de expansion entre los grupos BEST
+y WORST usando Informacion Mutua y algoritmos de Prim y Kruskal."
+
+
+================================================================================
+  SLIDE 2 | 0:30 - 1:15 | DATASET (Canva)
+================================================================================
+
+[QUE SE VE EN PANTALLA]
+  Diapositiva 2 de Canva: Dataset y split.
+
+[QUE DECIR]
+"El dataset d9_strong contiene 1000 registros y 9 variables categoricas.
+Los datos ya vienen discretizados con valores entre 0 y 3.
+
+Detectamos que x7 y x8 son columnas identicas, asi que las combinamos
+en una sola variable Y, usandola UNICAMENTE para particionar.
+
+Dividimos en dos grupos: BEST con 502 registros donde Y es 1, y WORST
+con 498 registros donde Y es 0. Y NO se incluye en los archivos de
+analisis. Trabajamos con 7 variables: x1 a x6 y x9."
+
+
+================================================================================
+  SLIDE 3 | 1:15 - 2:15 | ENTROPIA H(x5) (Canva con FOTO MANO)
+================================================================================
+
+[QUE SE VE EN PANTALLA]
+  Diapositiva 3 de Canva: Foto de tu hoja manuscrita con el desarrollo de H(x5).
+
+[QUE DECIR]
+"Aca vemos el calculo manual de la entropia de Shannon para x5.
+
+La formula es H de X igual a menos la sumatoria de P de x por logaritmo
+en base 2 de P de x.
+
+x5 toma tres valores: 0, 1 y 2. Sus probabilidades son 0.4810, 0.3930
+y 0.1260 respectivamente.
+
+Seguimos los 7 pasos del desarrollo: primero la formula, luego las
+probabilidades, sustituimos, calculamos los logaritmos, multiplicamos,
+sumamos y obtenemos el resultado: H de x5 es igual a 1.4140 bits.
+
+Para 3 valores, la entropia maxima seria 1.5850. El valor 1.4140 indica
+que la distribucion no es uniforme."
+
+
+================================================================================
+  SLIDE 4 | 2:15 - 3:15 | INFORMACION MUTUA I(x1;x5) (Canva con FOTO MANO)
+================================================================================
+
+[QUE SE VE EN PANTALLA]
+  Diapositiva 4 de Canva: Foto de tu hoja manuscrita con tabla de contingencia
+  y desarrollo de I(x1;x5).
+
+[QUE DECIR]
+"Aca desarrollamos manualmente la Informacion Mutua entre x1 y x5.
+
+La formula es I de X punto y coma Y igual a la doble sumatoria de P de
+x coma y por el logaritmo del cociente entre la probabilidad conjunta y
+el producto de las marginales.
+
+Primero construimos la tabla de contingencia. Por ejemplo, en 394 de los
+1000 registros, x1 es 0 y x5 es 0 simultaneamente.
+
+Luego calculamos los 4 terminos que contribuyen. El termino mas grande
+es 0.2811 para la combinacion x1 igual a 1 y x5 igual a 2.
+
+La suma total es 0.4191 bits, lo que significa que x1 y x5 comparten
+el 56 porciento de la informacion de x1."
+
+
+================================================================================
+  SLIDE 5 | 3:15 - 4:00 | MATRIZ IM Y DISTANCIAS (Canva)
+================================================================================
+
+[QUE SE VE EN PANTALLA]
+  Diapositiva 5 de Canva: Formula d = 1 - MI/min(H), matriz 7x7, 2 pares d=0.
+
+[QUE DECIR]
+"Para construir el arbol de expansion minima necesitamos distancias.
+Convertimos la Informacion Mutua a distancia con la formula d igual a
+1 menos MI sobre el minimo de las entropias.
+
+Esto nos da distancias entre 0 y 1, donde 0 significa maxima dependencia
+y 1 independencia total.
+
+En la matriz de distancias de 7 por 7, identificamos 2 pares con distancia
+cero: x4 con x9 y x6 con x9. Esto significa que estas variables tienen
+dependencia perfecta dentro de cada grupo."
+
+
+================================================================================
+  SLIDE 6 | 4:00 - 4:45 | PRIM - PSEUDOCODIGO (Canva)
+================================================================================
+
+[QUE SE VE EN PANTALLA]
+  Diapositiva 6 de Canva: Pseudocodigo de Prim + tabla de 6 aristas con costos.
+
+[QUE DECIR]
+"El algoritmo de Prim construye el arbol paso a paso. Empieza desde un
+nodo inicial, en nuestro caso x1. En cada paso, busca entre todos los
+nodos ya visitados la arista de menor distancia hacia un nodo no visitado.
+
+En BEST obtenemos un arbol con 6 aristas y costo total 2.782.
+En WORST el costo es 2.723. Ambos arboles tienen 5 de las 6 aristas en
+comun. Veamos la ejecucion en vivo."
+
+
+================================================================================
+  LIVE PYTHON | 4:45 - 5:30 | PRIM EN VIVO
+================================================================================
+
+[QUE SE VE EN PANTALLA]
+  Terminal. Ejecuta: python visual_mst.py
+  Avanza rapido (ENTER, ENTER...). Detenete en paso 4.
+
+[QUE DECIR]
+"Aca vemos el algoritmo de Prim en accion. Los nodos verdes son los
+visitados, los grises los no visitados. La arista azul gruesa es la
+recien agregada.
+
+Paso 1: x1 se conecta a x5. Paso 2: x5 a x2.
+Paso 3: x5 a x9. Paso 4: x9 a x6 con distancia CERO, porque tienen
+dependencia perfecta.
+
+Al final obtenemos 8 aristas con costo 2.95... Seguimos avanzando."
+[Seguir ENTER hasta ver Kruskal]
+
+
+================================================================================
+  SLIDE 7 | 5:30 - 6:00 | KRUSKAL - PSEUDOCODIGO (Canva)
+================================================================================
+
+[QUE SE VE EN PANTALLA]
+  Diapositiva 7 de Canva: Pseudocodigo de Kruskal + Union-Find.
+
+[QUE DECIR]
+"Kruskal ordena todas las aristas de menor a mayor distancia y las procesa
+con Union-Find. Si la arista conecta componentes diferentes, se acepta.
+Si ambos nodos ya estan conectados, se rechaza por formar ciclo.
+
+Union-Find usa compresion de ruta para hacer eficiente la busqueda del
+representante de cada componente, y union por rango para mantener los
+arboles balanceados."
+
+
+================================================================================
+  LIVE PYTHON | 6:00 - 6:30 | KRUSKAL EN VIVO
+================================================================================
+
+[QUE SE VE EN PANTALLA]
+  Sigue en visual_mst.py. Fase 2 (Kruskal). Avanza hasta ver una RECHAZADA (rojo).
+
+[QUE DECIR]
+"Aca vemos Kruskal evaluando aristas. Las verdes son aceptadas, las rojas
+punteadas son rechazadas.
+
+Esta arista x3-x8 es rechazada porque x3 y x8 ya estan en la misma
+componente a traves de x7. Agregarla crearia un ciclo.
+
+Al final, Kruskal produce el mismo arbol que Prim con el mismo costo
+total, validando ambos algoritmos."
+
+
+================================================================================
+  SLIDE 8 | 6:30 - 7:00 | MIN vs MAX (Canva)
+================================================================================
+
+[QUE SE VE EN PANTALLA]
+  Diapositiva 8 de Canva: Tabla comparativa MIN vs MAX.
+
+[QUE DECIR]
+"Comparamos los dos enfoques. MIN usa distancias y selecciona la arista
+de menor peso. MAX usa MI directa y selecciona la de mayor peso.
+
+Ambos algoritmos coinciden en los dos enfoques. La diferencia clave es
+que MIN puede tener pesos cero cuando hay dependencia perfecta, mientras
+que MAX tiene todos los pesos positivos."
+
+
+================================================================================
+  LIVE PYTHON | 7:00 - 7:45 | BEST vs WORST - VISUAL
+================================================================================
+
+[QUE SE VE EN PANTALLA]
+  Terminal. Cambia a proyecto_y_split.
+  Ejecuta: python visual_split.py
+  Muestra matrices (ENTER), arbol BEST (ENTER), arbol WORST (ENTER).
+
+[QUE DECIR]
+"Ahora ejecutamos el pipeline sobre BEST y WORST por separado.
+
+Vemos las matrices IM y de distancias de 7 por 7 para BEST. Noten que
+x4-x9 y x6-x9 tienen distancia cero, dependencia perfecta.
+
+Ahora el arbol MIN de BEST con costo 2.782115. x9 actua como hub central
+conectando x4, x6 y x5.
+
+Lo mismo para WORST con costo 2.723224. La estructura es similar pero
+con diferencias puntuales: 5 de las 6 aristas son comunes entre ambos."
+
+
+================================================================================
+  SLIDE 9 | 7:45 - 8:30 | BEST vs WORST - RESULTADOS (Canva)
+================================================================================
+
+[QUE SE VE EN PANTALLA]
+  Diapositiva 9 de Canva: Tabla comparativa BEST vs WORST.
+
+[QUE DECIR]
+"Aca vemos la comparacion numerica. El costo MIN difiere: 2.782 en BEST
+contra 2.723 en WORST. En el arbol MAX, los costos son 2.834 y 2.809.
+
+Las entropias tambien cambian: x3 es la variable mas sensible al contexto
+de Y, con una diferencia de entropia de menos 0.069 entre grupos.
+
+Y solo para particionar los datos, sin incluirse en los CSVs, evita la
+degeneracion del arbol MIN y permite obtener costos reales."
+
+
+================================================================================
+  SLIDE 10 | 8:30 - 9:15 | HALLAZGOS Y CONCLUSIONES (Canva)
+================================================================================
+
+[QUE SE VE EN PANTALLA]
+  Diapositiva 10 de Canva: 5 conclusiones principales.
+
+[QUE DECIR]
+"Resumiendo los hallazgos principales:
+
+Primero: x7 y x8 son identicas y se combinaron en Y, usada solo para
+particionar. Sin Y en los CSVs, trabajamos con 7 variables reales.
+
+Segundo: x9 es el hub central del arbol con la mayor entropia, 1.72 bits.
+
+Tercero: se identificaron 2 pares con dependencia perfecta: x4-x9 y x6-x9.
+
+Cuarto: Prim y Kruskal coinciden en todos los casos, validando la
+implementacion.
+
+Quinto: el analisis BEST vs WORST demuestra que la topologia cambia segun
+el contexto. El costo MIN difiere entre grupos y x3 es la variable mas
+sensible, con una diferencia de entropia de -0.069."
+
+
+================================================================================
+  SLIDE 11 | 9:15 - 10:00 | CIERRE (Canva)
+================================================================================
+
+[QUE SE VE EN PANTALLA]
+  Diapositiva 11 de Canva: Link del repositorio + QR + gracias.
+
+[QUE DECIR]
+"El codigo fuente completo esta disponible en el repositorio de GitHub:
+github.com/liamcruzticona/ENTROPIA_PARTICION.
+
+El proyecto incluye scripts de consola, visualizaciones interactivas,
+un archivo Excel con todas las hojas de calculo, y el informe completo
+en formato APA septima edicion.
+
+El video de esta exposicion tambien esta disponible en el enlace indicado
+en el informe.
+
+Muchas gracias por su atencion. Quedo a disposicion para preguntas."
+
+
+================================================================================
+  RESUMEN DE TIEMPOS
+================================================================================
+
+  0:00 - 0:30   SLIDE 1  - Portada                         30 seg
+  0:30 - 1:15   SLIDE 2  - Dataset                         45 seg
+  1:15 - 2:15   SLIDE 3  - Entropia H(x5) [FOTO MANO]      60 seg
+  2:15 - 3:15   SLIDE 4  - Info Mutua I(x1;x5) [FOTO MANO] 60 seg
+  3:15 - 4:00   SLIDE 5  - Matriz IM y Distancias           45 seg
+  4:00 - 4:45   SLIDE 6  - Prim (pseudocodigo)              45 seg
+  4:45 - 5:30   LIVE     - Prim en vivo                     45 seg
+  5:30 - 6:00   SLIDE 7  - Kruskal (pseudocodigo)           30 seg
+  6:00 - 6:30   LIVE     - Kruskal en vivo                  30 seg
+  6:30 - 7:00   SLIDE 8  - MIN vs MAX                       30 seg
+  7:00 - 7:45   LIVE     - BEST vs WORST visual             45 seg
+  7:45 - 8:30   SLIDE 9  - BEST vs WORST resultados          45 seg
+  8:30 - 9:15   SLIDE 10 - Hallazgos y conclusiones          45 seg
+  9:15 - 10:00  SLIDE 11 - Cierre                            45 seg
+  ----------------------------------------------------------------
+  TOTAL                                                    600 seg
