@@ -18,6 +18,7 @@ plt.ion()
 
 NODE_GREEN = '#2ecc71'
 NODE_BLUE = '#3498db'
+NODE_GRAY = '#bdc3c7'
 EDGE_GREEN = '#27ae60'
 EDGE_NEW = '#3498db'
 EDGE_ORANGE = '#f39c12'
