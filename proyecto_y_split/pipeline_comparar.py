@@ -393,7 +393,64 @@ print(f"    Costo = {r_b['prim_max_cost']:.6f}")
 print(f"\n  MAX ARBOL - WORST (MI directa):")
 for u, v, w in sorted(r_w['prim_max'], key=lambda x: -x[2]):
     print(f"    {r_w['variables'][u]} -- {r_w['variables'][v]:<6}  MI = {w:.6f}")
-print(f"    Costo = {r_w['prim_max_cost']:.6f}")
+    print(f"    Costo = {r_w['prim_max_cost']:.6f}")
+
+# =============================================================================
+# ETAPA 4: SELECCION DE VARIABLES
+# =============================================================================
+
+print("\n\n" + "=" * 70)
+print("  ETAPA 4: SELECCION DE VARIABLES")
+print("  Metodo: Suma de pesos MI incidentes en arbol MAX")
+print("  Delta = |SUM_BEST - SUM_WORST|")
+print("  Variables con mayor Delta = mas discriminativas entre grupos")
+print("=" * 70)
+
+# Suma de pesos MI incidentes por variable en cada arbol MAX
+sum_b = {}
+sum_w = {}
+for u, v, w in r_b['prim_max']:
+    sum_b[u] = sum_b.get(u, 0) + w
+    sum_b[v] = sum_b.get(v, 0) + w
+for u, v, w in r_w['prim_max']:
+    sum_w[u] = sum_w.get(u, 0) + w
+    sum_w[v] = sum_w.get(v, 0) + w
+
+ranking = []
+for i, var in enumerate(r_b['variables']):
+    sb = sum_b.get(i, 0)
+    sw = sum_w.get(i, 0)
+    delta = abs(sb - sw)
+    ranking.append((var, sb, sw, delta))
+
+ranking.sort(key=lambda x: -x[3])
+
+print(f"\n  {'Variable':<10} {'SUM BEST':<14} {'SUM WORST':<14} {'Delta':<12} {'Decision'}")
+print(f"  {'-'*60}")
+for var, sb, sw, d in ranking:
+    decision = "CONSERVAR" if d >= 0.005 else "ELIMINAR"
+    print(f"  {var:<10} {sb:<14.6f} {sw:<14.6f} {d:<12.6f} {decision}")
+
+keep = [v for v, _, _, d in ranking if d >= 0.005]
+discard = [v for v, _, _, d in ranking if d < 0.005]
+
+print(f"\n  Variables a CONSERVAR ({len(keep)}): {keep}")
+if discard:
+    print(f"  Variables a ELIMINAR ({len(discard)}): {discard}")
+else:
+    print(f"  NOTA: Todas las variables tienen Delta > 0.005.")
+    print(f"        Se sugiere conservar las top 4 por caida natural del Delta.")
+    top4 = [v for v, _, _, _ in ranking[:4]]
+    print(f"        Top 4 sugerido: {top4}")
+    print(f"        (caida de Delta: {ranking[3][3]:.6f} -> {ranking[4][3]:.6f})")
+
+# Guardar ranking para uso externo
+selection_data = {
+    'ranking': ranking,
+    'sum_best': sum_b,
+    'sum_worst': sum_w,
+    'keep_vars': keep if len(keep) < len(ranking) else [v for v, _, _, _ in ranking[:4]]
+}
 
 print("\n" + "=" * 70)
 print("  PIPELINE COMPLETADO")

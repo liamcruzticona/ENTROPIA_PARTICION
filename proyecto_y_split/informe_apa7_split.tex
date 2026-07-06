@@ -600,7 +600,70 @@ en WORST).
     \label{fig:comparacion}
 \end{figure}
 
+\subsection{Selección de Variables}
+
+El análisis comparativo permite identificar qué variables cambian
+significativamente su comportamiento entre BEST y WORST, y por tanto son
+las más informativas para discriminar entre ambos grupos.
+
+\subsubsection{Método de Selección}
+
+Para cada variable $X_i$ se calcula la suma de los pesos MI de las aristas
+incidentes en el árbol MAX, tanto en BEST como en WORST:
+
+\begin{equation*}
+    \Sigma_{\text{BEST}}(X_i) = \sum_{(u,v) \in \text{MST}_{\text{BEST}}} 
+    w(u,v) \cdot \mathbb{1}[u = i \lor v = i]
+\end{equation*}
+\begin{equation*}
+    \Sigma_{\text{WORST}}(X_i) = \sum_{(u,v) \in \text{MST}_{\text{WORST}}}
+    w(u,v) \cdot \mathbb{1}[u = i \lor v = i]
+\end{equation*}
+\begin{equation*}
+    \Delta(X_i) = \big|\,\Sigma_{\text{BEST}}(X_i) - \Sigma_{\text{WORST}}(X_i)\,\big|
+\end{equation*}
+
+\subsubsection{Resultados del Ranking}
+
+La Tabla~\ref{tab:seleccion} presenta el ranking de variables ordenado
+por $\Delta$ descendente. Las variables con mayor $\Delta$ son las que
+más cambian su rol entre BEST y WORST, y por tanto las más discriminativas.
+
+\begin{table}[H]
+    \centering
+    \caption{Ranking de Variables por $\Delta = |\Sigma_{\text{BEST}} - \Sigma_{\text{WORST}}|$}
+    \label{tab:seleccion}
+    \small
+    \begin{tabular}{cccccl}
+    \toprule
+    Pos. & Variable & $\Sigma$ BEST & $\Sigma$ WORST & $\Delta$ & Decisión \\
+    \midrule
+    1 & $x_9$  & 1.7611 & 1.6986 & 0.0625 & CONSERVAR \\
+    2 & $x_4$  & 0.7475 & 0.6860 & 0.0614 & CONSERVAR \\
+    3 & $x_2$  & 0.6555 & 0.6869 & 0.0315 & CONSERVAR \\
+    4 & $x_5$  & 1.0866 & 1.1175 & 0.0309 & CONSERVAR \\
+    5 & $x_1$  & 0.4172 & 0.4237 & 0.0065 & CONSERVAR \\
+    6 & $x_3$  & 0.0022 & 0.0058 & 0.0036 & ELIMINAR \\
+    7 & $x_6$  & 0.9974 & 0.9998 & 0.0024 & ELIMINAR \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+Se observa que $x_9$, $x_4$, $x_2$ y $x_5$ presentan los mayores $\Delta$,
+mientras que $x_3$ y $x_6$ tienen $\Delta < 0.005$ (umbral de decisión).
+Esto es consistente con el hecho de que $x_6$ mantiene dependencia
+casi perfecta con $x_9$ en ambos grupos ($\Delta \approx 0$) y $x_3$
+tiene pesos muy bajos en el árbol MAX en ambos casos.
+
+\subsubsection{Dataset Reducido}
+
+A partir del ranking, se genera un nuevo dataset \texttt{d9\_reducido.csv}
+con las 5 variables conservadas ($x_9$, $x_4$, $x_2$, $x_5$, $x_1$),
+reduciendo la dimensionalidad de 7 a 5 columnas (28.6\% de reducción)
+sobre las 1000 filas originales.
+
 % ==============================================================================
+\section{Discusión}
 \section{Discusión}
 % ==============================================================================
 
@@ -660,6 +723,11 @@ El análisis demuestra los siguientes puntos:
 
     \item Los algoritmos de Prim y Kruskal coinciden en todos los
           casos, validando la implementación.
+
+    \item El ranking de variables por $\Delta$ identificó a $x_9$, $x_4$,
+          $x_2$ y $x_5$ como las más discriminativas entre BEST y WORST,
+          permitiendo reducir la dimensionalidad del dataset de 7 a 5
+          columnas sin pérdida significativa de información.
 \end{enumerate}
 
 % ==============================================================================

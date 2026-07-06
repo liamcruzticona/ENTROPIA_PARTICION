@@ -225,7 +225,139 @@ for name in ["BEST", "WORST"]:
     wait_for_enter()
 
 # =============================================================================
-# PANTALLA 2-3: ARBOLES INDIVIDUALES
+# PANTALLA 3-6: PRIM Y KRUSKAL PASO A PASO (BEST Y WORST)
+# =============================================================================
+
+def draw_prim_step(visited, prev_edges, new_edge, step, total_steps, vars_list, G, POS):
+    plt.figure(figsize=(14, 10))
+    nc = len(vars_list)
+    node_colors = [NODE_GREEN if visited[i] else NODE_GRAY for i in range(nc)]
+    nx.draw_networkx_nodes(G, POS, node_color=node_colors, node_size=2200,
+                           edgecolors=NODE_BORDER, linewidths=2.5)
+    nx.draw_networkx_labels(G, POS, {v: v for v in vars_list}, font_size=14,
+                            font_weight='bold', font_color='white')
+    el = [(vars_list[u], vars_list[v]) for u, v, _ in prev_edges]
+    ew = {}
+    for u, v, d in prev_edges:
+        ew[(vars_list[u], vars_list[v])] = f"{d:.4f}"
+    if el:
+        nx.draw_networkx_edges(G, POS, edgelist=el, edge_color=EDGE_GREEN, width=3.5, alpha=0.8)
+    if new_edge:
+        u, v, d = new_edge
+        nx.draw_networkx_edges(G, POS, edgelist=[(vars_list[u], vars_list[v])],
+                               edge_color=EDGE_NEW, width=6, alpha=0.9)
+        ew[(vars_list[u], vars_list[v])] = f"{d:.4f}"
+    if ew:
+        nx.draw_networkx_edge_labels(G, POS, edge_labels=ew, font_size=9, font_weight='bold',
+                                      bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.85))
+    plt.title(f"PRIM MIN - Paso {step}/{total_steps}", fontsize=18, fontweight='bold', color='#2c3e50', pad=20)
+    if new_edge:
+        u, v, d = new_edge
+        plt.suptitle(f"{vars_list[u]} ------ {vars_list[v]}   (d = {d:.4f})", fontsize=14, color=NODE_GREEN, y=0.82)
+    plt.figtext(0.5, 0.01, "PRESIONE ENTER en esta ventana para continuar",
+                ha='center', fontsize=11, color='#7f8c8d', fontweight='bold')
+    plt.axis('off')
+    plt.tight_layout()
+
+
+def draw_kruskal_step(accepted, current_edge, is_accepted, step, connected, n_acc, total, vars_list, G, POS):
+    plt.figure(figsize=(14, 10))
+    nc = len(vars_list)
+    node_colors = [NODE_GREEN if connected[i] else NODE_GRAY for i in range(nc)]
+    nx.draw_networkx_nodes(G, POS, node_color=node_colors, node_size=2200,
+                           edgecolors=NODE_BORDER, linewidths=2.5)
+    nx.draw_networkx_labels(G, POS, {v: v for v in vars_list}, font_size=14,
+                            font_weight='bold', font_color='white')
+    ew = {}
+    if accepted:
+        al = [(vars_list[u], vars_list[v]) for u, v, _ in accepted]
+        for u, v, d in accepted:
+            ew[(vars_list[u], vars_list[v])] = f"{d:.4f}"
+        nx.draw_networkx_edges(G, POS, edgelist=al, edge_color=EDGE_GREEN, width=3.5, alpha=0.8)
+    u, v, d = current_edge
+    cl = (vars_list[u], vars_list[v])
+    if is_accepted:
+        nx.draw_networkx_edges(G, POS, edgelist=[cl], edge_color=EDGE_NEW, width=6, alpha=0.9)
+        ew[cl] = f"{d:.4f}"
+    else:
+        nx.draw_networkx_edges(G, POS, edgelist=[cl], edge_color=EDGE_RED, width=3, alpha=0.9, style='dashed')
+    if ew:
+        nx.draw_networkx_edge_labels(G, POS, edge_labels=ew, font_size=9, font_weight='bold',
+                                      bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.85))
+    vd = "ACEPTADA" if is_accepted else "RECHAZADA (ciclo)"
+    vc = NODE_GREEN if is_accepted else EDGE_RED
+    plt.title(f"KRUSKAL MIN - Arista #{step}  [{n_acc}/{total}]", fontsize=18, fontweight='bold', color='#2c3e50', pad=20)
+    plt.suptitle(f"{vars_list[u]} ------ {vars_list[v]}   (d = {d:.4f})", fontsize=14, color=vc, y=0.82)
+    plt.figtext(0.5, 0.06, vd, ha='center', fontsize=16, fontweight='bold', color=vc)
+    plt.figtext(0.5, 0.01, "PRESIONE ENTER en esta ventana para continuar",
+                ha='center', fontsize=11, color='#7f8c8d', fontweight='bold')
+    plt.axis('off')
+    plt.tight_layout()
+
+
+for name in ["BEST", "WORST"]:
+    dd = all_data[name]
+    vars_list = dd['vars']
+    nv = len(vars_list)
+    total_steps = nv - 1
+
+    G = nx.Graph()
+    for v in vars_list: G.add_node(v)
+    for i in range(nv):
+        for j in range(i + 1, nv):
+            G.add_edge(vars_list[i], vars_list[j])
+    POS = nx.spring_layout(G, seed=42, k=4, iterations=100)
+
+    # Prim MIN paso a paso
+    print(f"\n  >>> {name} - PRIM MIN (paso a paso)")
+    visited = [False] * nv; visited[0] = True
+    prim_edges = []; prim_cost = 0
+    draw_prim_step(visited, [], None, 0, total_steps, vars_list, G, POS)
+    wait_for_enter()
+
+    for step in range(1, total_steps + 1):
+        bd = float('inf'); bu = bv = -1
+        for u in range(nv):
+            if visited[u]:
+                for v in range(nv):
+                    if not visited[v] and dd['dist_mat'][u, v] < bd:
+                        bd = dd['dist_mat'][u, v]; bu, bv = u, v
+        visited[bv] = True
+        ne = (bu, bv, bd)
+        prim_edges.append(ne); prim_cost += bd
+        print(f"    Paso {step}: {vars_list[bu]} -- {vars_list[bv]}  d={bd:.6f}")
+        draw_prim_step(visited, prim_edges, ne, step, total_steps, vars_list, G, POS)
+        wait_for_enter()
+
+    # Kruskal MIN paso a paso
+    print(f"\n  >>> {name} - KRUSKAL MIN (paso a paso)")
+    all_edges = []
+    for i in range(nv):
+        for j in range(i + 1, nv):
+            all_edges.append((dd['dist_mat'][i, j], i, j))
+    all_edges.sort()
+    uf = UnionFind(nv)
+    kruskal_edges = []; kruskal_cost = 0; connected = [False] * nv
+    step_k = 0
+
+    draw_kruskal_step([], (0, 0, 0), True, 0, connected, 0, total_steps, vars_list, G, POS)
+    wait_for_enter()
+
+    for d, u, v in all_edges:
+        step_k += 1
+        accepted = uf.union(u, v)
+        if accepted:
+            kruskal_edges.append((u, v, d)); kruskal_cost += d
+            connected[u] = True; connected[v] = True
+        vd2 = "ACEPTADA" if accepted else "RECHAZADA"
+        print(f"    Eval #{step_k}: {vars_list[u]} -- {vars_list[v]}  d={d:.6f}  {vd2}  ({len(kruskal_edges)}/{total_steps})")
+        draw_kruskal_step(kruskal_edges, (u, v, d), accepted, step_k, connected, len(kruskal_edges), total_steps, vars_list, G, POS)
+        wait_for_enter()
+        if accepted and len(kruskal_edges) == total_steps:
+            break
+
+# =============================================================================
+# PANTALLA 7: ARBOLES INDIVIDUALES (MIN + MAX)
 # =============================================================================
 
 for name in ["BEST", "WORST"]:
@@ -346,6 +478,65 @@ fig.text(0.5, 0.01, info, ha='center', fontsize=13, color='#2c3e50',
 
 plt.figtext(0.5, 0.02, "PRESIONE ENTER para finalizar",
             ha='center', fontsize=11, color='#7f8c8d', fontweight='bold')
+plt.tight_layout()
+wait_for_enter()
+
+# =============================================================================
+# PANTALLA 8: SELECCION DE VARIABLES
+# =============================================================================
+
+print("\n  >>> Mostrando SELECCION DE VARIABLES...")
+
+# Calcular Delta para cada variable
+sum_b = {}; sum_w = {}
+for u, v, w in all_data['BEST']['pmax']:
+    sum_b[u] = sum_b.get(u, 0) + w; sum_b[v] = sum_b.get(v, 0) + w
+for u, v, w in all_data['WORST']['pmax']:
+    sum_w[u] = sum_w.get(u, 0) + w; sum_w[v] = sum_w.get(v, 0) + w
+
+vars_list = all_data['BEST']['vars']
+ranking = []
+for i, var in enumerate(vars_list):
+    sb = sum_b.get(i, 0); sw = sum_w.get(i, 0); delta = abs(sb - sw)
+    ranking.append((var, sb, sw, delta))
+ranking.sort(key=lambda x: -x[3])
+
+fig, (ax_bar, ax_table) = plt.subplots(1, 2, figsize=(18, 9),
+    gridspec_kw={'width_ratios': [1.2, 1]})
+fig.suptitle("SELECCION DE VARIABLES - Ranking por Delta", fontsize=16,
+             fontweight='bold', color='#2c3e50', y=0.98)
+
+# Barras horizontales
+vars_rev = [r[0] for r in ranking[::-1]]
+deltas_rev = [r[3] for r in ranking[::-1]]
+colors = ['#27ae60' if d >= 0.005 else '#e74c3c' for d in deltas_rev]
+ax_bar.barh(range(len(vars_rev)), deltas_rev, color=colors, edgecolor='white')
+for i, (v, d) in enumerate(zip(vars_rev, deltas_rev)):
+    ax_bar.text(d + 0.001, i, f"{v} ({d:.4f})", va='center', fontsize=12, fontweight='bold')
+ax_bar.set_yticks(range(len(vars_rev)))
+ax_bar.set_yticklabels(vars_rev, fontsize=13, fontweight='bold')
+ax_bar.set_xlabel('Delta = |SUM_BEST - SUM_WORST|', fontsize=11)
+ax_bar.set_title('Variables mas discriminativas\n(verde = CONSERVAR, rojo = ELIMINAR)', fontsize=12,
+                 fontweight='bold', color='#2c3e50')
+
+# Tabla
+ax_table.axis('off')
+tbl_data = [['Var', 'SUM BEST', 'SUM WORST', 'Delta', 'Decision']]
+for var, sb, sw, d in ranking:
+    dec = 'CONSERVAR' if d >= 0.005 else 'ELIMINAR'
+    tbl_data.append([var, f'{sb:.4f}', f'{sw:.4f}', f'{d:.4f}', dec])
+tbl = ax_table.table(cellText=tbl_data, cellLoc='center', loc='center')
+tbl.auto_set_font_size(False); tbl.set_fontsize(10); tbl.scale(1.1, 1.6)
+for key, cell in tbl.get_celld().items():
+    cell.set_edgecolor('#2c3e50'); cell.set_linewidth(1)
+    if key[0] == 0: cell.set_facecolor('#2c3e50'); cell.get_text().set_color('white')
+ax_table.set_title('Ranking completo', fontsize=13, fontweight='bold', pad=15)
+
+keep_vars = [v for v, _, _, d in ranking if d >= 0.005]
+info2 = f"Variables a CONSERVAR: {keep_vars} ({len(keep_vars)} de {len(ranking)})"
+fig.text(0.5, 0.01, info2, ha='center', fontsize=13, color='#27ae60', fontweight='bold')
+plt.figtext(0.5, 0.03, "PRESIONE ENTER para finalizar", ha='center',
+            fontsize=11, color='#7f8c8d', fontweight='bold')
 plt.tight_layout()
 wait_for_enter()
 
