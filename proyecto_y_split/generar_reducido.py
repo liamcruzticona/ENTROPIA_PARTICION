@@ -1,7 +1,7 @@
 """
 =====================================================================
   generar_reducido.py - Genera d9_reducido.csv con variables seleccionadas
-  Metodo: Suma de aristas incidentes en arbol MIN (distancias)
+  Metodo: Suma de fila completa de matriz IM (MI directa)
   Ranking por |Delta| = |SUM_BEST - SUM_WORST| con umbral
 =====================================================================
 """
@@ -38,38 +38,17 @@ def pipeline(filename):
         prob_tables[var] = {k: v / n_rows for k, v in sorted(counts.items())}
     entropies = {var: entropy(list(prob_tables[var].values())) for var in variables}
 
-    mi_dict = {}; mi_matrix = np.zeros((n_cols, n_cols))
+    mi_matrix = np.zeros((n_cols, n_cols))
     for v1, v2 in combinations(range(n_cols), 2):
         m = mutual_info(d[:, v1], d[:, v2], n_rows)
-        mi_dict[(v1, v2)] = m; mi_dict[(v2, v1)] = m
         mi_matrix[v1, v2] = m; mi_matrix[v2, v1] = m
 
-    dist_matrix = np.zeros((n_cols, n_cols))
-    for i in range(n_cols):
-        for j in range(n_cols):
-            if i != j:
-                min_h = min(entropies[variables[i]], entropies[variables[j]])
-                dist_matrix[i, j] = max(0.0, 1.0 - mi_matrix[i, j] / min_h) if min_h > 0 else 0.0
-
-    # Prim MIN
-    visited = [False] * n_cols; visited[0] = True
-    pmin = []; pmin_cost = 0
-    for _ in range(n_cols - 1):
-        bd = float('inf'); bu = bv = -1
-        for u in range(n_cols):
-            if visited[u]:
-                for v in range(n_cols):
-                    if not visited[v] and dist_matrix[u, v] < bd:
-                        bd = dist_matrix[u, v]; bu, bv = u, v
-        visited[bv] = True; pmin.append((bu, bv, bd)); pmin_cost += bd
-
-    # Suma pesos de distancias incidentes en arbol MIN
+    # Suma de fila completa de la matriz IM (MI directa)
     suma = {}
-    for u, v, d in pmin:
-        suma[u] = suma.get(u, 0) + d
-        suma[v] = suma.get(v, 0) + d
+    for i in range(n_cols):
+        suma[i] = sum(mi_matrix[i])
 
-    return variables, pmin, pmin_cost, suma
+    return variables, mi_matrix, suma
 
 
 # =============================================================================
@@ -78,8 +57,8 @@ r_w = pipeline('d9_strong_W.csv')
 
 ranking = []
 for i, var in enumerate(r_b[0]):
-    sb = r_b[3].get(i, 0)
-    sw = r_w[3].get(i, 0)
+    sb = r_b[2][i]
+    sw = r_w[2][i]
     delta = abs(sb - sw)
     ranking.append((var, sb, sw, delta, i))
 
@@ -88,7 +67,7 @@ ranking.sort(key=lambda x: -x[3])
 umbral = 0.01
 
 print("=" * 60)
-print("  SELECCION DE VARIABLES - Arbol MIN (distancias)")
+print("  SELECCION DE VARIABLES - Matriz IM (MI directa)")
 print("=" * 60)
 print(f"\n  {'Variable':<10} {'SUM BEST':<14} {'SUM WORST':<14} {'|Delta|':<12} {'Decision'}")
 print(f"  {'-'*60}")
@@ -107,7 +86,6 @@ print(f"  (umbral: |Delta| >= {umbral})")
 # Cargar dataset original
 with open('../d9_strong.txt') as f:
     lines = f.readlines()
-header = lines[0].strip().split(',')
 
 var_map = {'x1': 0, 'x2': 1, 'x3': 6, 'x4': 3, 'x5': 2, 'x6': 4, 'x7': 7, 'x9': 5}
 

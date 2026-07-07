@@ -608,17 +608,14 @@ las más informativas para discriminar entre ambos grupos.
 
 \subsubsection{Método de Selección}
 
-Para cada variable $X_i$ se calcula la suma de las distancias de las
-aristas incidentes en el \'arbol MIN (distancias), tanto en BEST como
-en WORST:
+Para cada variable $X_i$ se calcula la suma de toda la fila $i$ en la
+matriz de Informaci\'on Mutua (IM), tanto en BEST como en WORST:
 
 \begin{equation*}
-    \Sigma_{\text{BEST}}(X_i) = \sum_{(u,v) \in \text{MST}_{\text{BEST}}}
-    d_{\text{BEST}}(u,v) \cdot \mathbb{1}[u=i \lor v=i]
+    \Sigma_{\text{BEST}}(X_i) = \sum_{j=1}^{7} I_{\text{BEST}}(X_i; X_j)
 \end{equation*}
 \begin{equation*}
-    \Sigma_{\text{WORST}}(X_i) = \sum_{(u,v) \in \text{MST}_{\text{WORST}}}
-    d_{\text{WORST}}(u,v) \cdot \mathbb{1}[u=i \lor v=i]
+    \Sigma_{\text{WORST}}(X_i) = \sum_{j=1}^{7} I_{\text{WORST}}(X_i; X_j)
 \end{equation*}
 \begin{equation*}
     \Delta(X_i) = \big|\,\Sigma_{\text{BEST}}(X_i) - \Sigma_{\text{WORST}}(X_i)\,\big|
@@ -631,33 +628,33 @@ por $\Delta$ descendente, con umbral de decisi\'on en $|\Delta| \ge 0.01$.
 
 \begin{table}[H]
     \centering
-    \caption{Ranking por $\Delta$ usando \'arbol MIN (distancias)}
+    \caption{Ranking por $\Delta$ usando matriz IM (MI directa)}
     \label{tab:seleccion}
     \small
     \begin{tabular}{cccccl}
     \toprule
     Pos. & Variable & $\Sigma$ BEST & $\Sigma$ WORST & $\Delta$ & Decisi\'on \\
     \midrule
-    1 & $x_1$  & 1.4497 & 0.4238 & 1.0258 & CONSERVAR \\
-    2 & $x_9$  & 0.9885 & 1.9873 & 0.9988 & CONSERVAR \\
-    3 & $x_5$  & 1.7854 & 1.7310 & 0.0544 & CONSERVAR \\
-    4 & $x_2$  & 0.3439 & 0.3121 & 0.0318 & CONSERVAR \\
-    5 & $x_3$  & 0.9967 & 0.9922 & 0.0045 & ELIMINAR \\
-    6 & $x_4$  & 0.0000 & 0.0000 & 0.0000 & ELIMINAR \\
-    7 & $x_6$  & 0.0000 & 0.0000 & 0.0000 & ELIMINAR \\
+    1 & $x_9$  & 1.7735 & 1.7046 & 0.0688 & CONSERVAR \\
+    2 & $x_4$  & 0.7552 & 0.6942 & 0.0610 & CONSERVAR \\
+    3 & $x_2$  & 0.6693 & 0.6969 & 0.0276 & CONSERVAR \\
+    4 & $x_5$  & 1.1032 & 1.1207 & 0.0176 & CONSERVAR \\
+    5 & $x_6$  & 1.0175 & 1.0019 & 0.0156 & CONSERVAR \\
+    6 & $x_3$  & 0.0039 & 0.0133 & 0.0094 & ELIMINAR \\
+    7 & $x_1$  & 0.4330 & 0.4355 & 0.0025 & ELIMINAR \\
     \bottomrule
     \end{tabular}
 \end{table}
 
-$x_4$ y $x_6$ tienen $\Delta = 0$ porque mantienen $d=0$ con $x_9$ en ambos
-grupos (dependencia perfecta estable). $x_1$ y $x_9$ son las m\'as
-discriminativas, cambiando completamente su rol entre BEST y WORST.
+$x_9$ y $x_4$ presentan los mayores $\Delta$ por su alta dependencia mutua,
+mientras que $x_1$ tiene el menor $\Delta$ (su relaci\'on con las dem\'as
+variables practicamente no cambia entre grupos).
 
 \subsubsection{Dataset Reducido}
 
-Se genera \texttt{d9\_reducido.csv} con las 4 variables conservadas
-($x_1$, $x_9$, $x_5$, $x_2$), reduciendo la dimensionalidad de 7 a 4
-columnas (42.9\% de reducci\'on) sobre las 1000 filas originales.
+Se genera \texttt{d9\_reducido.csv} con las 5 variables conservadas
+($x_9$, $x_4$, $x_2$, $x_5$, $x_6$), reduciendo la dimensionalidad de
+7 a 5 columnas (28.6\% de reducci\'on) sobre las 1000 filas originales.
 
 % ==============================================================================
 \section{Discusión}
@@ -721,10 +718,10 @@ El análisis demuestra los siguientes puntos:
     \item Los algoritmos de Prim y Kruskal coinciden en todos los
           casos, validando la implementación.
 
-    \item El ranking de variables usando el \'arbol MIN (distancias)
-          con umbral $|\Delta| \ge 0.01$ identific\'o a $x_1$, $x_9$,
-          $x_5$ y $x_2$ como las m\'as discriminativas entre BEST y WORST,
-          eliminando a $x_3$, $x_4$ y $x_6$ (42.9\% de reducci\'on).
+    \item El ranking de variables usando la matriz IM (MI directa)
+          con umbral $|\Delta| \ge 0.01$ identific\'o a $x_9$, $x_4$,
+          $x_2$, $x_5$ y $x_6$ como las m\'as discriminativas,
+          eliminando a $x_1$ y $x_3$ (28.6\% de reducci\'on).
 \end{enumerate}
 
 % ==============================================================================

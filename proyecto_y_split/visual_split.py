@@ -518,16 +518,15 @@ wait_for_enter()
 
 print("\n  >>> Mostrando SELECCION DE VARIABLES...")
 
-# Calcular Delta: aristas incidentes en arbol MIN (distancias)
+# Calcular Delta: suma de fila completa de matriz IM (MI directa)
 sum_b = {}; sum_w = {}
-for u, v, d in all_data['BEST']['pmin']:
-    sum_b[u] = sum_b.get(u, 0) + d; sum_b[v] = sum_b.get(v, 0) + d
-for u, v, d in all_data['WORST']['pmin']:
-    sum_w[u] = sum_w.get(u, 0) + d; sum_w[v] = sum_w.get(v, 0) + d
+for i in range(len(vars_list)):
+    sum_b[i] = sum(all_data['BEST']['mi_mat'][i])
+    sum_w[i] = sum(all_data['WORST']['mi_mat'][i])
 
 ranking = []
 for i, var in enumerate(vars_list):
-    sb = sum_b.get(i, 0); sw = sum_w.get(i, 0); delta = abs(sb - sw)
+    sb = sum_b[i]; sw = sum_w[i]; delta = abs(sb - sw)
     ranking.append((var, sb, sw, delta))
 ranking.sort(key=lambda x: -x[3])
 
@@ -535,7 +534,7 @@ umbral = 0.01
 
 fig, (ax_bar, ax_table) = plt.subplots(1, 2, figsize=(18, 9),
     gridspec_kw={'width_ratios': [1.2, 1]})
-fig.suptitle("SELECCION DE VARIABLES - Arbol MIN (distancias)", fontsize=16,
+fig.suptitle("SELECCION DE VARIABLES - Matriz IM (MI directa)", fontsize=16,
              fontweight='bold', color='#2c3e50', y=0.98)
 
 # Barras
