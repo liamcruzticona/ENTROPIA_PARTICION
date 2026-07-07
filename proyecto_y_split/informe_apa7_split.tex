@@ -663,6 +663,64 @@ subpoblaciones con estructuras de dependencia diferenciadas. Las cinco
 variables restantes ($x_1$, $x_2$, $x_5$, $x_6$, $x_9$) muestran robustez
 estructural ($|\Delta| < 0.5$).
 
+\subsection{Método Complementario: Matriz de Distancias}
+
+Como enfoque complementario, se aplicó el método de suma de fila completa
+de la matriz de distancias $d = 1 - I/\min(H)$, propuesto por el docente.
+Para cada variable $X_i$:
+
+\begin{equation*}
+    \Sigma_{\text{BEST}}(X_i) = \sum_{j=1}^{7} d_{\text{BEST}}(X_i, X_j)
+\end{equation*}
+\begin{equation*}
+    \Delta(X_i) = \Sigma_{\text{BEST}}(X_i) - \Sigma_{\text{WORST}}(X_i)
+\end{equation*}
+
+\begin{table}[H]
+    \centering
+    \caption{Ranking por suma de fila completa de matriz de distancias}
+    \small
+    \begin{tabular}{cccc}
+    \toprule
+    Pos. & Variable & $\Sigma$ BEST & $\Sigma$ WORST & $\Delta$ \\
+    \midrule
+    1 & $x_5$  & 4.7664 & 4.7269 & $+0.0395$ \\
+    2 & $x_2$  & 5.3285 & 5.2997 & $+0.0288$ \\
+    3 & $x_1$  & 5.4289 & 5.4077 & $+0.0212$ \\
+    4 & $x_6$  & 4.9778 & 4.9975 & $-0.0197$ \\
+    5 & $x_3$  & 5.9942 & 5.9815 & $+0.0127$ \\
+    6 & $x_9$  & 3.9739 & 3.9802 & $-0.0063$ \\
+    7 & $x_4$  & 4.9896 & 4.9880 & $+0.0016$ \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+En este enfoque, $x_5$ y $x_2$ emergen como las variables con mayor $|\Delta|$,
+mientras que $x_4$ muestra $|\Delta| \approx 0$ (su distancia total a las
+demás variables es prácticamente idéntica en ambos grupos).
+
+\subsection{Comparación entre Métodos}
+
+\begin{table}[H]
+    \centering
+    \caption{Comparación de rankings: rVP vs Matriz de Distancias}
+    \small
+    \begin{tabular}{cccc}
+    \toprule
+    Variable & Rank rVP & Rank Distancias & Interpretación \\
+    \midrule
+    $x_3$  & \textbf{1} (crítica) & 5 & Cambia posición en el árbol, no peso global \\
+    $x_4$  & \textbf{2} (crítica) & 7 & Cambia rol topológico, peso estable \\
+    $x_5$  & 5 & \textbf{1} & Peso global cambia, posición estable \\
+    $x_2$  & 7 & \textbf{2} & Peso global cambia, posición estable \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+Ambos métodos son complementarios: rVP identifica variables que cambian
+su \textbf{rol topológico} en el árbol, mientras que el método de distancias
+identifica variables que cambian su \textbf{peso global} de conexión.
+
 % ==============================================================================
 \section{Discusión}
 \section{Discusión}
@@ -725,12 +783,12 @@ El análisis demuestra los siguientes puntos:
     \item Los algoritmos de Prim y Kruskal coinciden en todos los
           casos, validando la implementación.
 
-    \item El método rVP (Rango de Variación Permitido) identificó a
-          $x_3$ ($\Delta=-1.685$) y $x_4$ ($\Delta=-0.781$) como las
-          únicas variables críticas cuya posición topológica cambia
-          significativamente entre BEST y WORST, mientras que $x_1$,
-          $x_2$, $x_5$, $x_6$ y $x_9$ son estructuralmente robustas
-          ($|\Delta| < 0.5$).
+    \item El método rVP identificó a $x_3$ ($\Delta=-1.685$) y $x_4$
+          ($\Delta=-0.781$) como variables críticas (cambio de rol
+          topológico), mientras que el método complementario de matriz
+          de distancias identificó a $x_5$ ($\Delta=+0.039$) y $x_2$
+          ($\Delta=+0.029$) como las de mayor cambio de peso global.
+          Ambos enfoques son complementarios y enriquecen el análisis.
 \end{enumerate}
 
 % ==============================================================================

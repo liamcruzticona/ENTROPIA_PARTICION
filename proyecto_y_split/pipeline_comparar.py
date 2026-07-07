@@ -461,6 +461,50 @@ estables = [var for var, _, _, _, ad in ranking if ad <= umbral]
 print(f"\n  Variables CRITICAS (|Delta| > {umbral}): {criticas}")
 print(f"  Variables ESTABLES: {estables}")
 
+# --- METODO 2: Profesor (suma fila completa matriz distancias) ---
+print(f"\n  {'='*50}")
+print(f"  METODO 2 (Profesor): Suma fila completa matriz distancias")
+print(f"  Delta = SUM_BEST - SUM_WORST (sin valor absoluto)")
+print(f"  {'='*50}")
+
+sum_d_b = {}; sum_d_w = {}
+for i in range(len(r_b['variables'])):
+    sum_d_b[i] = sum(r_b['dist_matrix'][i])
+    sum_d_w[i] = sum(r_w['dist_matrix'][i])
+
+ranking2 = []
+for i, var in enumerate(r_b['variables']):
+    sb = sum_d_b[i]; sw = sum_d_w[i]; delta = sb - sw
+    ranking2.append((var, sb, sw, delta, abs(delta)))
+
+ranking2.sort(key=lambda x: -x[4])
+
+print(f"\n  {'Variable':<10} {'SUM BEST':<14} {'SUM WORST':<14} {'Delta':>12} {'|Delta|':<10}")
+print(f"  {'-'*58}")
+for var, sb, sw, d, ad in ranking2:
+    print(f"  {var:<10} {sb:<14.4f} {sw:<14.4f} {d:12.4f} {ad:<10.4f}")
+
+# Gap detection
+deltas_ordered = [ad for _, _, _, _, ad in ranking2]
+gaps = [deltas_ordered[i] / deltas_ordered[i+1] if deltas_ordered[i+1] > 0 else 999 for i in range(len(deltas_ordered)-1)]
+max_gap_idx = gaps.index(max(gaps))
+criticas2 = [var for i, (var, _, _, _, ad) in enumerate(ranking2) if i <= max_gap_idx]
+print(f"\n  Criticas por gap natural (pos {max_gap_idx+1}): {criticas2}")
+print(f"  (gap maximo: {deltas_ordered[max_gap_idx]:.4f} -> {deltas_ordered[max_gap_idx+1]:.4f}, ratio={max(gaps):.1f}x)")
+
+# Comparacion lado a lado
+print(f"\n  {'='*50}")
+print(f"  COMPARACION: rVP vs Profesor")
+print(f"  {'='*50}")
+print(f"  {'Variable':<10} {'rVP |D|':<10} {'rVP rank':<10} {'Prof |D|':<10} {'Prof rank':<10}")
+print(f"  {'-'*50}")
+for i, var in enumerate(r_b['variables']):
+    rvp_rank = next(j+1 for j, (v,_,_,_,_) in enumerate(ranking) if v == var)
+    rvp_d = next(ad for v,_,_,_,ad in ranking if v == var)
+    prof_rank = next(j+1 for j, (v,_,_,_,_) in enumerate(ranking2) if v == var)
+    prof_d = next(ad for v,_,_,_,ad in ranking2 if v == var)
+    print(f"  {var:<10} {rvp_d:<10.4f} {rvp_rank:<10} {prof_d:<10.4f} {prof_rank:<10}")
+
 print("\n" + "=" * 70)
 print("  PIPELINE COMPLETADO")
 print("=" * 70)

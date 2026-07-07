@@ -28,6 +28,7 @@
 
 
 
+
 """
 =====================================================================
   visual_split.py - Arboles BEST vs WORST lado a lado
@@ -587,6 +588,59 @@ ax_table.set_title('Ranking rVP completo', fontsize=13, fontweight='bold', pad=1
 criticas = [v for v, _, _, _, ad in ranking if ad > umbral]
 info2 = f"CRITICAS: {criticas}  |  Umbral={umbral}"
 fig.text(0.5, 0.01, info2, ha='center', fontsize=13, color='#27ae60', fontweight='bold')
+plt.figtext(0.5, 0.03, "PRESIONE ENTER para finalizar", ha='center',
+            fontsize=11, color='#7f8c8d', fontweight='bold')
+plt.tight_layout()
+wait_for_enter()
+
+# =============================================================================
+# PANTALLA 9: METODO PROFESOR (suma fila completa matriz distancias)
+# =============================================================================
+
+print("\n  >>> Mostrando METODO 2 (Profesor): Matriz de Distancias...")
+
+sum_pb = {}; sum_pw = {}
+for i in range(len(vars_list)):
+    sum_pb[i] = sum(all_data['BEST']['dist_mat'][i])
+    sum_pw[i] = sum(all_data['WORST']['dist_mat'][i])
+
+ranking_p = []
+for i, var in enumerate(vars_list):
+    sb = sum_pb[i]; sw = sum_pw[i]; delta = sb - sw
+    ranking_p.append((var, sb, sw, delta, abs(delta)))
+ranking_p.sort(key=lambda x: -x[4])
+
+fig, (ax_bar, ax_table) = plt.subplots(1, 2, figsize=(18, 9),
+    gridspec_kw={'width_ratios': [1.2, 1]})
+fig.suptitle("METODO 2 (Profesor): Suma fila completa matriz distancias", fontsize=16,
+             fontweight='bold', color='#2c3e50', y=0.98)
+
+vars_rev = [r[0] for r in ranking_p[::-1]]
+deltas_rev = [r[3] for r in ranking_p[::-1]]
+colors = ['#e74c3c' if abs(d) > 0.02 else '#27ae60' for d in deltas_rev]
+ax_bar.barh(range(len(vars_rev)), deltas_rev, color=colors, edgecolor='white')
+for i, (v, d) in enumerate(zip(vars_rev, deltas_rev)):
+    ax_bar.text(d + 0.001, i, f"{v} ({d:+.4f})", va='center', fontsize=12, fontweight='bold')
+ax_bar.set_yticks(range(len(vars_rev)))
+ax_bar.set_yticklabels(vars_rev, fontsize=13, fontweight='bold')
+ax_bar.set_xlabel('Delta = SUM_BEST - SUM_WORST', fontsize=11)
+ax_bar.set_title('Rojo = mayor |Delta|, Verde = menor', fontsize=12,
+                 fontweight='bold', color='#2c3e50')
+
+ax_table.axis('off')
+tbl_data = [['Var', 'SUM BEST', 'SUM WORST', 'Delta', '|Delta|']]
+for var, sb, sw, d, ad in ranking_p:
+    tbl_data.append([var, f'{sb:.4f}', f'{sw:.4f}', f'{d:+.4f}', f'{ad:.4f}'])
+tbl = ax_table.table(cellText=tbl_data, cellLoc='center', loc='center')
+tbl.auto_set_font_size(False); tbl.set_fontsize(10); tbl.scale(1.1, 1.6)
+for key, cell in tbl.get_celld().items():
+    cell.set_edgecolor('#2c3e50'); cell.set_linewidth(1)
+    if key[0] == 0: cell.set_facecolor('#2c3e50'); cell.get_text().set_color('white')
+ax_table.set_title('Ranking por distancias', fontsize=13, fontweight='bold', pad=15)
+
+top2 = [v for v, _, _, _, _ in ranking_p[:2]]
+info3 = f"Mayor |Delta|: {top2}"
+fig.text(0.5, 0.01, info3, ha='center', fontsize=13, color='#e74c3c', fontweight='bold')
 plt.figtext(0.5, 0.03, "PRESIONE ENTER para finalizar", ha='center',
             fontsize=11, color='#7f8c8d', fontweight='bold')
 plt.tight_layout()
