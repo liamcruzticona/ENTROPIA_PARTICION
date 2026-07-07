@@ -401,34 +401,40 @@ for u, v, w in sorted(r_w['prim_max'], key=lambda x: -x[2]):
 
 print("\n\n" + "=" * 70)
 print("  ETAPA 4: SELECCION DE VARIABLES")
-print("  Metodo: Suma de la fila completa de la matriz de distancias")
-print("  Delta = SUM_BEST - SUM_WORST")
-print("  Mayor |Delta| = variable mas discriminativa entre grupos")
+print("  Metodo: Suma de aristas incidentes en arbol MIN (distancias)")
+print("  Delta = |SUM_BEST - SUM_WORST|")
+print("  Variables con mayor Delta = mas discriminativas entre grupos")
 print("=" * 70)
 
-# Suma de fila completa de la matriz de distancias por variable
-sum_b = {}
-sum_w = {}
-for i in range(len(r_b['variables'])):
-    sum_b[i] = sum(r_b['dist_matrix'][i])
-    sum_w[i] = sum(r_w['dist_matrix'][i])
+sum_b = {}; sum_w = {}
+for u, v, d in r_b['prim_min']:
+    sum_b[u] = sum_b.get(u, 0) + d
+    sum_b[v] = sum_b.get(v, 0) + d
+for u, v, d in r_w['prim_min']:
+    sum_w[u] = sum_w.get(u, 0) + d
+    sum_w[v] = sum_w.get(v, 0) + d
 
 ranking = []
 for i, var in enumerate(r_b['variables']):
-    sb = sum_b[i]
-    sw = sum_w[i]
-    delta = sb - sw
+    sb = sum_b.get(i, 0)
+    sw = sum_w.get(i, 0)
+    delta = abs(sb - sw)
     ranking.append((var, sb, sw, delta))
 
-ranking.sort(key=lambda x: -abs(x[3]))
+ranking.sort(key=lambda x: -x[3])
 
-print(f"\n  {'Variable':<10} {'SUM BEST':<14} {'SUM WORST':<14} {'Delta':+12}")
-print(f"  {'-'*52}")
+umbral = 0.01
+print(f"\n  {'Variable':<10} {'SUM BEST':<14} {'SUM WORST':<14} {'|Delta|':<12} {'Decision'}")
+print(f"  {'-'*60}")
 for var, sb, sw, d in ranking:
-    print(f"  {var:<10} {sb:<14.6f} {sw:<14.6f} {d:+12.6f}")
+    decision = "CONSERVAR" if d >= umbral else "ELIMINAR"
+    print(f"  {var:<10} {sb:<14.6f} {sw:<14.6f} {d:<12.6f} {decision}")
 
-print(f"\n  Las variables con mayor |Delta| son las que mas cambian entre grupos.")
-print(f"  Top discriminativas: {[v for v,_,_,_ in ranking[:4]]}")
+keep = [v for v, _, _, d in ranking if d >= umbral]
+discard = [v for v, _, _, d in ranking if d < umbral]
+print(f"\n  CONSERVAR ({len(keep)}/{len(ranking)}): {keep}")
+print(f"  ELIMINAR ({len(discard)}/{len(ranking)}): {discard}")
+print(f"  (umbral: |Delta| >= {umbral})")
 
 print("\n" + "=" * 70)
 print("  PIPELINE COMPLETADO")

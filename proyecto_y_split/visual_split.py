@@ -1,3 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 """
 =====================================================================
   visual_split.py - Arboles BEST vs WORST lado a lado
@@ -488,41 +518,45 @@ wait_for_enter()
 
 print("\n  >>> Mostrando SELECCION DE VARIABLES...")
 
-# Calcular Delta: suma de fila completa de matriz de distancias
+# Calcular Delta: aristas incidentes en arbol MIN (distancias)
 sum_b = {}; sum_w = {}
-for i in range(len(vars_list)):
-    sum_b[i] = sum(all_data['BEST']['dist_mat'][i])
-    sum_w[i] = sum(all_data['WORST']['dist_mat'][i])
+for u, v, d in all_data['BEST']['pmin']:
+    sum_b[u] = sum_b.get(u, 0) + d; sum_b[v] = sum_b.get(v, 0) + d
+for u, v, d in all_data['WORST']['pmin']:
+    sum_w[u] = sum_w.get(u, 0) + d; sum_w[v] = sum_w.get(v, 0) + d
 
 ranking = []
 for i, var in enumerate(vars_list):
-    sb = sum_b[i]; sw = sum_w[i]; delta = sb - sw
+    sb = sum_b.get(i, 0); sw = sum_w.get(i, 0); delta = abs(sb - sw)
     ranking.append((var, sb, sw, delta))
-ranking.sort(key=lambda x: -abs(x[3]))
+ranking.sort(key=lambda x: -x[3])
+
+umbral = 0.01
 
 fig, (ax_bar, ax_table) = plt.subplots(1, 2, figsize=(18, 9),
     gridspec_kw={'width_ratios': [1.2, 1]})
-fig.suptitle("SELECCION DE VARIABLES - Ranking por Delta", fontsize=16,
+fig.suptitle("SELECCION DE VARIABLES - Arbol MIN (distancias)", fontsize=16,
              fontweight='bold', color='#2c3e50', y=0.98)
 
-# Barras horizontales
+# Barras
 vars_rev = [r[0] for r in ranking[::-1]]
 deltas_rev = [r[3] for r in ranking[::-1]]
-colors = ['#27ae60' if abs(d) >= 0.005 else '#e74c3c' for d in deltas_rev]
+colors = ['#27ae60' if d >= umbral else '#e74c3c' for d in deltas_rev]
 ax_bar.barh(range(len(vars_rev)), deltas_rev, color=colors, edgecolor='white')
 for i, (v, d) in enumerate(zip(vars_rev, deltas_rev)):
-    ax_bar.text(d + 0.0005, i, f"{v} ({d:+.4f})", va='center', fontsize=12, fontweight='bold')
+    ax_bar.text(d + 0.01, i, f"{v} ({d:.4f})", va='center', fontsize=12, fontweight='bold')
 ax_bar.set_yticks(range(len(vars_rev)))
 ax_bar.set_yticklabels(vars_rev, fontsize=13, fontweight='bold')
-ax_bar.set_xlabel('Delta = SUM_BEST - SUM_WORST', fontsize=11)
-ax_bar.set_title('Variables mas discriminativas\n(verde = cambia, rojo = estable)', fontsize=12,
+ax_bar.set_xlabel('|Delta| = |SUM_BEST - SUM_WORST|', fontsize=11)
+ax_bar.set_title(f'Verde = CONSERVAR (>= {umbral}), Rojo = ELIMINAR', fontsize=12,
                  fontweight='bold', color='#2c3e50')
 
 # Tabla
 ax_table.axis('off')
-tbl_data = [['Var', 'SUM BEST', 'SUM WORST', 'Delta']]
+tbl_data = [['Var', 'SUM BEST', 'SUM WORST', '|Delta|', 'Decision']]
 for var, sb, sw, d in ranking:
-    tbl_data.append([var, f'{sb:.4f}', f'{sw:.4f}', f'{d:+.4f}'])
+    dec = 'CONSERVAR' if d >= umbral else 'ELIMINAR'
+    tbl_data.append([var, f'{sb:.4f}', f'{sw:.4f}', f'{d:.4f}', dec])
 tbl = ax_table.table(cellText=tbl_data, cellLoc='center', loc='center')
 tbl.auto_set_font_size(False); tbl.set_fontsize(10); tbl.scale(1.1, 1.6)
 for key, cell in tbl.get_celld().items():
@@ -530,8 +564,8 @@ for key, cell in tbl.get_celld().items():
     if key[0] == 0: cell.set_facecolor('#2c3e50'); cell.get_text().set_color('white')
 ax_table.set_title('Ranking completo', fontsize=13, fontweight='bold', pad=15)
 
-top4 = [v for v, _, _, _ in ranking[:4]]
-info2 = f"Top 4 discriminativas (mayor |Delta|): {top4}"
+keep_vars = [v for v, _, _, d in ranking if d >= umbral]
+info2 = f"CONSERVAR: {keep_vars} ({len(keep_vars)}/{len(ranking)})  |  umbral={umbral}"
 fig.text(0.5, 0.01, info2, ha='center', fontsize=13, color='#27ae60', fontweight='bold')
 plt.figtext(0.5, 0.03, "PRESIONE ENTER para finalizar", ha='center',
             fontsize=11, color='#7f8c8d', fontweight='bold')
