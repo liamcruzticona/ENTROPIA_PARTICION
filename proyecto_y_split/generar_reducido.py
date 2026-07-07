@@ -47,24 +47,19 @@ def pipeline(filename):
         for j in range(n_cols):
             if i != j: mi_matrix[i, j] = mi_dict.get((i, j), 0.0)
 
-    # Prim MAX
-    visited = [False] * n_cols; visited[0] = True
-    pmax = []; pmax_cost = 0
-    for _ in range(n_cols - 1):
-        bw = -1.0; bu = bv = -1
-        for u in range(n_cols):
-            if visited[u]:
-                for v in range(n_cols):
-                    if not visited[v] and mi_matrix[u, v] > bw:
-                        bw = mi_matrix[u, v]; bu, bv = u, v
-        visited[bv] = True; pmax.append((bu, bv, bw)); pmax_cost += bw
+    dist_matrix = np.zeros((n_cols, n_cols))
+    for i in range(n_cols):
+        for j in range(n_cols):
+            if i != j:
+                min_h = min(entropies[variables[i]], entropies[variables[j]])
+                dist_matrix[i, j] = max(0.0, 1.0 - mi_matrix[i, j] / min_h) if min_h > 0 else 0.0
 
+    # Suma de fila completa de la matriz de distancias
     suma = {}
-    for u, v, w in pmax:
-        suma[u] = suma.get(u, 0) + w
-        suma[v] = suma.get(v, 0) + w
+    for i in range(n_cols):
+        suma[i] = sum(dist_matrix[i])
 
-    return variables, pmax, pmax_cost, suma
+    return variables, dist_matrix, suma
 
 
 # =============================================================================
@@ -73,12 +68,12 @@ r_w = pipeline('d9_strong_W.csv')
 
 ranking = []
 for i, var in enumerate(r_b[0]):
-    sb = r_b[3].get(i, 0)
-    sw = r_w[3].get(i, 0)
-    delta = abs(sb - sw)
+    sb = r_b[2][i]
+    sw = r_w[2][i]
+    delta = sb - sw
     ranking.append((var, sb, sw, delta, i))
 
-ranking.sort(key=lambda x: -x[3])
+ranking.sort(key=lambda x: -abs(x[3]))
 
 print("=" * 60)
 print("  SELECCION DE VARIABLES - RANKING")
