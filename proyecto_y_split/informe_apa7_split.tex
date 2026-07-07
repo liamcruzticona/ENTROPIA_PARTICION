@@ -619,11 +619,9 @@ todas las demás variables:
     \Delta(X_i) = \Sigma_{\text{BEST}}(X_i) - \Sigma_{\text{WORST}}(X_i)
 \end{equation*}
 
-Una variable es \textbf{crítica} si su $|\Delta|$ se sitúa por encima del
-punto de corte determinado por la caída natural (gap detection) en la serie
-ordenada, sin depender de umbrales fijos arbitrarios. El gap se calcula como
-la razón entre valores consecutivos de $|\Delta|$; el punto de máxima razón
-marca la frontera entre variables críticas y estables.
+Una variable es \textbf{crítica} si $|\Delta(X_i)| > 0.5$, indicando que
+la partición alteró significativamente su posición topológica en el árbol.
+Este umbral es el utilizado por trabajos similares en el curso.
 
 \subsubsection{Resultados del Ranking rVP}
 
@@ -660,10 +658,11 @@ y la estructura general del árbol redistribuye las distancias acumuladas.
 \subsubsection{Conclusiones del rVP}
 
 Desde la perspectiva del método rVP, la partición por $Y$ \textbf{no es
-inocua}: dos variables ($x_3$ y $x_4$) se sitúan por encima del corte
-determinado por caída natural (gap ratio 1.68x), evidenciando que el
-dataset original contiene subpoblaciones con estructuras de dependencia
-diferenciadas. Las cinco variables restantes muestran robustez estructural.
+inocua}: dos de las siete variables ($x_3$ y $x_4$) superan el umbral de
+criticidad ($|\Delta| > 0.5$), evidenciando que el dataset original contiene
+subpoblaciones con estructuras de dependencia diferenciadas. Las cinco
+variables restantes ($x_1$, $x_2$, $x_5$, $x_6$, $x_9$) muestran robustez
+estructural.
 
 \subsection{Método Complementario: Matriz de Distancias}
 
@@ -697,9 +696,10 @@ Para cada variable $X_i$:
     \end{tabular}
 \end{table}
 
-En este enfoque, $x_5$ y $x_2$ emergen como las variables con mayor $|\Delta|$,
-mientras que $x_4$ muestra $|\Delta| \approx 0$ (su distancia total a las
-demás variables es prácticamente idéntica en ambos grupos).
+En este enfoque se presenta el ranking completo sin umbral predefinido,
+dejando al lector la interpretación de los resultados. Las variables $x_5$
+y $x_2$ encabezan el ranking con los mayores $|\Delta|$, mientras que $x_4$
+muestra $|\Delta| \approx 0$.
 
 \subsection{Comparación entre Métodos}
 

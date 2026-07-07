@@ -29,6 +29,8 @@
 
 
 
+
+
 """
 =====================================================================
   visual_split.py - Arboles BEST vs WORST lado a lado
@@ -554,8 +556,8 @@ ranking.sort(key=lambda x: -x[4])
 
 # Gap detection
 deltas_rvp = [ad for _, _, _, _, ad in ranking]
-gaps_rvp = [deltas_rvp[i]/deltas_rvp[i+1] if deltas_rvp[i+1] > 0 else 999 for i in range(len(deltas_rvp)-1)]
-corte_rvp = gaps_rvp.index(max(gaps_rvp))
+
+umbral = 0.5
 
 fig, (ax_bar, ax_table) = plt.subplots(1, 2, figsize=(18, 9),
     gridspec_kw={'width_ratios': [1.2, 1]})
@@ -565,31 +567,31 @@ fig.suptitle("METODO 1 (rVP): Distancias de camino en MST", fontsize=16,
 # Barras
 vars_rev = [r[0] for r in ranking[::-1]]
 deltas_rev = [r[3] for r in ranking[::-1]]
-colors = ['#e74c3c' if i <= corte_rvp else '#27ae60' for i, (_, _, _, _, _) in enumerate(ranking[::-1])]
+colors = ['#e74c3c' if ad > umbral else '#27ae60' for _, _, _, _, ad in ranking[::-1]]
 ax_bar.barh(range(len(vars_rev)), deltas_rev, color=colors, edgecolor='white')
 for i, (v, d) in enumerate(zip(vars_rev, deltas_rev)):
     ax_bar.text(d + 0.05, i, f"{v} ({d:.4f})", va='center', fontsize=12, fontweight='bold')
 ax_bar.set_yticks(range(len(vars_rev)))
 ax_bar.set_yticklabels(vars_rev, fontsize=13, fontweight='bold')
 ax_bar.set_xlabel('|Delta| = |SUM_BEST - SUM_WORST|', fontsize=11)
-ax_bar.set_title(f'Rojo = CRITICA (pos <= {corte_rvp+1}), Verde = estable', fontsize=12,
+ax_bar.set_title(f'Rojo = CRITICA (|D|>{umbral}), Verde = estable', fontsize=12,
                  fontweight='bold', color='#2c3e50')
 
 # Tabla
 ax_table.axis('off')
 tbl_data = [['Var', 'SUM BEST', 'SUM WORST', 'Delta', '|Delta|', 'Critica?']]
 for var, sb, sw, d, ad in ranking:
-    critica = 'SI' if ad >= deltas_rvp[corte_rvp] else 'No'
+    critica = 'SI' if ad > umbral else 'No'
     tbl_data.append([var, f'{sb:.4f}', f'{sw:.4f}', f'{d:+.4f}', f'{ad:.4f}', critica])
 tbl = ax_table.table(cellText=tbl_data, cellLoc='center', loc='center')
 tbl.auto_set_font_size(False); tbl.set_fontsize(10); tbl.scale(1.1, 1.6)
 for key, cell in tbl.get_celld().items():
     cell.set_edgecolor('#2c3e50'); cell.set_linewidth(1)
     if key[0] == 0: cell.set_facecolor('#2c3e50'); cell.get_text().set_color('white')
-ax_table.set_title('Ranking rVP (caida natural)', fontsize=13, fontweight='bold', pad=15)
+ax_table.set_title('Ranking rVP', fontsize=13, fontweight='bold', pad=15)
 
-criticas = [v for i, (v, _, _, _, _) in enumerate(ranking) if i <= corte_rvp]
-info2 = f"CRITICAS (caida natural): {criticas}  |  Gap en pos {corte_rvp+1}"
+criticas = [v for v, _, _, _, ad in ranking if ad > umbral]
+info2 = f"CRITICAS (|D|>{umbral}): {criticas}  |  Estables: {[v for v, _, _, _, ad in ranking if ad <= umbral]}"
 fig.text(0.5, 0.01, info2, ha='center', fontsize=13, color='#27ae60', fontweight='bold')
 plt.figtext(0.5, 0.03, "PRESIONE ENTER para finalizar", ha='center',
             fontsize=11, color='#7f8c8d', fontweight='bold')
@@ -613,11 +615,6 @@ for i, var in enumerate(vars_list):
     ranking_p.append((var, sb, sw, delta, abs(delta)))
 ranking_p.sort(key=lambda x: -x[4])
 
-# Gap detection
-deltas_p = [ad for _, _, _, _, ad in ranking_p]
-gaps_p = [deltas_p[i]/deltas_p[i+1] if deltas_p[i+1] > 0 else 999 for i in range(len(deltas_p)-1)]
-corte_p = gaps_p.index(max(gaps_p))
-
 fig, (ax_bar, ax_table) = plt.subplots(1, 2, figsize=(18, 9),
     gridspec_kw={'width_ratios': [1.2, 1]})
 fig.suptitle("METODO 2 (Profesor): Suma fila completa matriz distancias", fontsize=16,
@@ -625,14 +622,15 @@ fig.suptitle("METODO 2 (Profesor): Suma fila completa matriz distancias", fontsi
 
 vars_rev = [r[0] for r in ranking_p[::-1]]
 deltas_rev = [r[3] for r in ranking_p[::-1]]
-colors = ['#e74c3c' if i <= corte_p else '#27ae60' for i, (_, _, _, _, _) in enumerate(ranking_p[::-1])]
+max_d = max(abs(d) for d in deltas_rev)
+colors = [plt.cm.Reds(0.3 + 0.7 * abs(d)/max_d) if abs(d) > 0 else '#27ae60' for d in deltas_rev]
 ax_bar.barh(range(len(vars_rev)), deltas_rev, color=colors, edgecolor='white')
 for i, (v, d) in enumerate(zip(vars_rev, deltas_rev)):
     ax_bar.text(d + 0.001, i, f"{v} ({d:+.4f})", va='center', fontsize=12, fontweight='bold')
 ax_bar.set_yticks(range(len(vars_rev)))
 ax_bar.set_yticklabels(vars_rev, fontsize=13, fontweight='bold')
 ax_bar.set_xlabel('Delta = SUM_BEST - SUM_WORST', fontsize=11)
-ax_bar.set_title(f'Rojo = discriminativa (pos <= {corte_p+1}), Verde = estable', fontsize=12,
+ax_bar.set_title('Intensidad proporcional a |Delta| (sin umbral)', fontsize=12,
                  fontweight='bold', color='#2c3e50')
 
 ax_table.axis('off')
@@ -644,10 +642,9 @@ tbl.auto_set_font_size(False); tbl.set_fontsize(10); tbl.scale(1.1, 1.6)
 for key, cell in tbl.get_celld().items():
     cell.set_edgecolor('#2c3e50'); cell.set_linewidth(1)
     if key[0] == 0: cell.set_facecolor('#2c3e50'); cell.get_text().set_color('white')
-ax_table.set_title('Ranking por distancias', fontsize=13, fontweight='bold', pad=15)
+ax_table.set_title('Ranking (sin umbral)', fontsize=13, fontweight='bold', pad=15)
 
-disc_p = [v for i, (v, _, _, _, _) in enumerate(ranking_p) if i <= corte_p]
-info3 = f"Discriminativas (caida natural): {disc_p}  |  Gap en pos {corte_p+1}"
+info3 = "Ranking por |Delta|. Sin umbral predefinido."
 fig.text(0.5, 0.01, info3, ha='center', fontsize=13, color='#e74c3c', fontweight='bold')
 plt.figtext(0.5, 0.03, "PRESIONE ENTER para finalizar", ha='center',
             fontsize=11, color='#7f8c8d', fontweight='bold')
