@@ -449,16 +449,22 @@ for i, var in enumerate(r_b['variables']):
 
 ranking.sort(key=lambda x: -x[4])
 
-umbral = 0.5
+# Gap detection: caida natural (sin umbral fijo)
+deltas_rvp = [ad for _, _, _, _, ad in ranking]
+gaps_rvp = [deltas_rvp[i] / deltas_rvp[i+1] if deltas_rvp[i+1] > 0 else 999 for i in range(len(deltas_rvp)-1)]
+corte_rvp = gaps_rvp.index(max(gaps_rvp))
+
 print(f"\n  {'Variable':<10} {'SUM BEST':<14} {'SUM WORST':<14} {'Delta':>12} {'|Delta|':<10} {'Critica?'}")
 print(f"  {'-'*68}")
-for var, sb, sw, d, ad in ranking:
-    critica = 'SI' if ad > umbral else 'No'
+for i, (var, sb, sw, d, ad) in enumerate(ranking):
+    critica = 'SI' if i <= corte_rvp else 'No'
     print(f"  {var:<10} {sb:<14.4f} {sw:<14.4f} {d:12.4f} {ad:<10.4f} {critica}")
 
-criticas = [(var, f'{d:+.4f}') for var, _, _, d, ad in ranking if ad > umbral]
-estables = [var for var, _, _, _, ad in ranking if ad <= umbral]
-print(f"\n  Variables CRITICAS (|Delta| > {umbral}): {criticas}")
+criticas = [(var, f'{d:+.4f}') for i, (var, _, _, d, ad) in enumerate(ranking) if i <= corte_rvp]
+estables = [var for i, (var, _, _, _, _) in enumerate(ranking) if i > corte_rvp]
+print(f"\n  Corte por caida natural: despues de posicion {corte_rvp+1}")
+print(f"  Gap: {deltas_rvp[corte_rvp]:.4f} -> {deltas_rvp[corte_rvp+1]:.4f} (ratio {max(gaps_rvp):.1f}x)")
+print(f"  Variables CRITICAS: {criticas}")
 print(f"  Variables ESTABLES: {estables}")
 
 # --- METODO 2: Profesor (suma fila completa matriz distancias) ---
@@ -488,8 +494,9 @@ for var, sb, sw, d, ad in ranking2:
 deltas_ordered = [ad for _, _, _, _, ad in ranking2]
 gaps = [deltas_ordered[i] / deltas_ordered[i+1] if deltas_ordered[i+1] > 0 else 999 for i in range(len(deltas_ordered)-1)]
 max_gap_idx = gaps.index(max(gaps))
-criticas2 = [var for i, (var, _, _, _, ad) in enumerate(ranking2) if i <= max_gap_idx]
-print(f"\n  Criticas por gap natural (pos {max_gap_idx+1}): {criticas2}")
+criticas2 = [var for i, (var, _, _, _, _) in enumerate(ranking2) if i <= max_gap_idx]
+discriminativas = criticas2
+print(f"\n  Discriminativas por caida natural (pos {max_gap_idx+1}): {discriminativas}")
 print(f"  (gap maximo: {deltas_ordered[max_gap_idx]:.4f} -> {deltas_ordered[max_gap_idx+1]:.4f}, ratio={max(gaps):.1f}x)")
 
 # Comparacion lado a lado

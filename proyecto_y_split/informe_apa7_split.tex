@@ -619,8 +619,11 @@ todas las demás variables:
     \Delta(X_i) = \Sigma_{\text{BEST}}(X_i) - \Sigma_{\text{WORST}}(X_i)
 \end{equation*}
 
-Una variable es \textbf{crítica} si $|\Delta(X_i)| > 0.5$, indicando que
-la partición alteró significativamente su posición topológica en el árbol.
+Una variable es \textbf{crítica} si su $|\Delta|$ se sitúa por encima del
+punto de corte determinado por la caída natural (gap detection) en la serie
+ordenada, sin depender de umbrales fijos arbitrarios. El gap se calcula como
+la razón entre valores consecutivos de $|\Delta|$; el punto de máxima razón
+marca la frontera entre variables críticas y estables.
 
 \subsubsection{Resultados del Ranking rVP}
 
@@ -657,11 +660,10 @@ y la estructura general del árbol redistribuye las distancias acumuladas.
 \subsubsection{Conclusiones del rVP}
 
 Desde la perspectiva del método rVP, la partición por $Y$ \textbf{no es
-inocua}: dos de las siete variables ($x_3$ y $x_4$) exceden el rango de
-variación permitido, evidenciando que el dataset original contiene
-subpoblaciones con estructuras de dependencia diferenciadas. Las cinco
-variables restantes ($x_1$, $x_2$, $x_5$, $x_6$, $x_9$) muestran robustez
-estructural ($|\Delta| < 0.5$).
+inocua}: dos variables ($x_3$ y $x_4$) se sitúan por encima del corte
+determinado por caída natural (gap ratio 1.68x), evidenciando que el
+dataset original contiene subpoblaciones con estructuras de dependencia
+diferenciadas. Las cinco variables restantes muestran robustez estructural.
 
 \subsection{Método Complementario: Matriz de Distancias}
 
