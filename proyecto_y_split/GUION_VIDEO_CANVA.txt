@@ -1,0 +1,212 @@
+================================================================================
+  GUION DE VIDEO - 10 MINUTOS - FORMATO CANVA + LIVE PYTHON
+  Pipeline: Entropia -> IM -> MST + BEST vs WORST + rVP + Profesor
+================================================================================
+
+INSTRUCCIONES:
+  - Abri Canva con las 14 diapositivas listas ANTES de grabar.
+  - Abri una terminal en proyecto_y_split.
+  - Alterna entre Canva y Live Python.
+  - Lee este guion. Habla despacio y claro.
+  - Duracion total: 10 minutos exactos.
+
+
+================================================================================
+  SLIDE 1 | 0:00 - 0:30 | PORTADA (Canva)
+================================================================================
+
+"Muy buenos dias. Soy Jhon Edy Huanacuni Ccama, de la Universidad Nacional
+del Altiplano, Escuela de Ingenieria de Sistemas. Presento el analisis
+comparativo de la topologia del arbol de expansion entre los grupos BEST
+y WORST usando Informacion Mutua y algoritmos de Prim-Kruskal."
+
+
+================================================================================
+  SLIDE 2 | 0:30 - 1:00 | DATASET (Canva)
+================================================================================
+
+"El dataset d9_strong contiene 1000 registros y 9 variables categoricas.
+Detectamos que x7 y x8 son columnas identicas, asi que las combinamos en Y,
+usandola SOLO para particionar. Dividimos en BEST con 502 registros y WORST
+con 498 registros. Y NO se incluye en los archivos de analisis. Trabajamos
+con 7 variables: x1 a x6 y x9."
+
+
+================================================================================
+  SLIDE 3 | 1:00 - 1:45 | ENTROPIA (Canva con FOTO MANO)
+================================================================================
+
+"Aca vemos el calculo manual de la entropia de Shannon para x5. La formula
+es H de X igual a menos la sumatoria de P de x por logaritmo en base 2 de
+P de x. x5 toma tres valores con probabilidades 0.4810, 0.3930 y 0.1260.
+El resultado es 1.4140 bits. La tabla muestra las 7 entropias comparadas
+entre BEST y WORST. x3 presenta el mayor cambio: -0.069."
+
+
+================================================================================
+  SLIDE 4 | 1:45 - 2:30 | INFO MUTUA (Canva con FOTO MANO)
+================================================================================
+
+"Aca desarrollamos manualmente la Informacion Mutua entre x1 y x5. Primero
+construimos la tabla de contingencia. Luego calculamos los 4 terminos que
+contribuyen. El termino mas grande es 0.2811 para x1=1 y x5=2. La suma
+total es 0.4191 bits, lo que significa que x1 y x5 comparten el 56 porciento
+de la informacion de x1."
+
+
+================================================================================
+  SLIDE 5 | 2:30 - 3:00 | MATRIZ Y DISTANCIAS (Canva)
+================================================================================
+
+"Convertimos la Informacion Mutua a distancia con la formula d igual a
+1 menos MI sobre el minimo de las entropias. Identificamos 2 pares con
+distancia cero: x4-x9 y x6-x9, lo que significa dependencia perfecta."
+
+
+================================================================================
+  LIVE PYTHON | 3:00 - 3:45 | MATRICES + PRIM + KRUSKAL
+================================================================================
+
+[Ejecuta: python visual_split.py. Muestra rapidamente matrices (ENTER x2),
+luego Prim BEST paso a paso (3-4 pasos), Kruskal BEST (2-3 pasos)]
+
+"Aca vemos la ejecucion en vivo. Las matrices de 7 por 7 para BEST y WORST.
+Luego el algoritmo de Prim construyendo el arbol paso a paso con 6 aristas.
+Y Kruskal evaluando aristas: las verdes son aceptadas, las rojas rechazadas
+por formar ciclo. Ambos algoritmos coinciden en el costo total."
+
+
+================================================================================
+  SLIDE 6 | 3:45 - 4:00 | PRIM (Canva)
+================================================================================
+
+"El arbol MIN de BEST tiene costo 2.782 y el de WORST 2.723. La diferencia
+de 0.059 confirma que la topologia cambia entre grupos. 5 de las 6 aristas
+son comunes entre ambos."
+
+
+================================================================================
+  SLIDE 7 | 4:00 - 4:15 | KRUSKAL + MIN vs MAX (Canva, rapido)
+================================================================================
+
+"Kruskal produce el mismo arbol que Prim. Comparamos MIN con distancias
+y MAX con MI directa. Ambos enfoques son validos. MIN puede tener pesos
+cero, MAX tiene todos los pesos positivos."
+
+
+================================================================================
+  SLIDE 8-9 | 4:15 - 4:45 | COMPARACION BEST vs WORST (Canva)
+================================================================================
+
+"La tabla comparativa muestra que los costos MIN difieren: 2.782 en BEST
+contra 2.723 en WORST. Las entropias tambien cambian, siendo x3 la variable
+mas sensible con una diferencia de -0.069."
+
+
+================================================================================
+  SLIDE 10 | 4:45 - 5:45 | METODO rVP (Canva)
+================================================================================
+
+"Ahora aplicamos el metodo rVP o Rango de Variacion Permitido. Este metodo
+construye el MST con MI directa y calcula la distancia de camino entre cada
+par de nodos dentro del arbol. Luego suma todos los caminos que parten de
+cada variable y compara BEST contra WORST.
+
+El resultado muestra que x3 es la variable mas critica, con un Delta de
+-1.685, mas del triple del umbral de 0.5. Esto significa que x3 cambia
+completamente su posicion en el arbol entre BEST y WORST. En BEST esta
+cerca del centro, en WORST se va a la periferia.
+
+x4 es la segunda variable critica con Delta de -0.781. Las otras cinco
+variables son estructuralmente robustas."
+
+
+================================================================================
+  SLIDE 11 | 5:45 - 6:30 | METODO PROFESOR (Canva)
+================================================================================
+
+"Como metodo complementario, aplicamos el enfoque del profesor: sumar
+toda la fila de la matriz de distancias para cada variable. Este metodo
+mide el cambio de peso global de conexion, no el cambio de posicion en
+el arbol.
+
+Aca el ranking cambia: x5 y x2 son las que mas cambian su peso global,
+mientras que x4 tiene un Delta practicamente nulo, lo cual es consistente
+con que x4 mantiene d=0 con x9 en ambos grupos."
+
+
+================================================================================
+  SLIDE 12 | 6:30 - 7:15 | COMPARACION DE METODOS (Canva)
+================================================================================
+
+"La comparacion entre metodos revela algo muy interesante:
+
+x3 es critica en rVP pero no en el metodo del profesor. Esto significa
+que x3 CAMBIO su posicion en el arbol, pero su peso global de conexion
+se mantuvo similar.
+
+x5 y x2 son altas en el metodo del profesor pero estables en rVP. Esto
+significa que su peso global cambio, pero su rol topologico no.
+
+Ambos metodos son COMPLEMENTARIOS. Capturan aspectos distintos del cambio
+estructural. Usarlos juntos da una vision mas completa que cualquiera
+por separado."
+
+
+================================================================================
+  SLIDE 13 | 7:15 - 8:00 | HALLAZGOS (Canva)
+================================================================================
+
+"Resumiendo: x7 y x8 son identicas y se combinaron en Y. x9 es el hub
+central. Hay 2 pares con dependencia perfecta. Prim y Kruskal coinciden.
+El costo MIN difiere entre BEST y WORST. El metodo rVP identifica a x3
+y x4 como criticas. El metodo del profesor identifica a x5 y x2 con
+mayor cambio de peso global. Ambos metodos son complementarios."
+
+
+================================================================================
+  LIVE PYTHON | 8:00 - 8:30 | DEMO SELECCION
+================================================================================
+
+[Ejecuta: python pipeline_comparar.py. Muestra la ETAPA 4 con ambos rankings]
+
+"Aca vemos la salida de consola con los dos metodos calculados. El pipeline
+completo se ejecuta en cuestion de segundos y genera ambos rankings
+automaticamente."
+
+
+================================================================================
+  SLIDE 14 | 8:30 - 9:30 | CIERRE (Canva)
+================================================================================
+
+"El codigo fuente completo esta en github.com/liamcruzticona/ENTROPIA_PARTICION.
+El proyecto incluye scripts de pipeline, visualizaciones interactivas, un
+archivo Excel con todas las hojas de calculo, y el informe completo en
+formato APA septima edicion.
+
+El video de esta exposicion tambien esta disponible en el enlace indicado
+en el informe. Muchas gracias por su atencion. Quedo a disposicion para
+preguntas."
+
+
+================================================================================
+  RESUMEN DE TIEMPOS
+================================================================================
+
+  0:00 - 0:30   Portada                             30 seg
+  0:30 - 1:00   Dataset                             30 seg
+  1:00 - 1:45   Entropia [FOTO MANO]                 45 seg
+  1:45 - 2:30   Info Mutua [FOTO MANO]               45 seg
+  2:30 - 3:00   Matriz y Distancias                  30 seg
+  3:00 - 3:45   LIVE: matrices + Prim + Kruskal      45 seg
+  3:45 - 4:00   Prim (slide)                         15 seg
+  4:00 - 4:15   Kruskal + MIN vs MAX                 15 seg
+  4:15 - 4:45   Comparacion BEST vs WORST             30 seg
+  4:45 - 5:45   rVP (metodo companero)               60 seg
+  5:45 - 6:30   Profesor (matriz distancias)          45 seg
+  6:30 - 7:15   Comparacion de metodos                45 seg
+  7:15 - 8:00   Hallazgos                            45 seg
+  8:00 - 8:30   LIVE: demo seleccion                  30 seg
+  8:30 - 9:30   Cierre y preguntas                   60 seg
+  ---------------------------------------------------------
+  TOTAL                                             570 seg = 9:30 + margen
