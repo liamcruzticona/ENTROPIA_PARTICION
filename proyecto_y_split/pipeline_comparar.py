@@ -396,39 +396,70 @@ for u, v, w in sorted(r_w['prim_max'], key=lambda x: -x[2]):
     print(f"    Costo = {r_w['prim_max_cost']:.6f}")
 
 # =============================================================================
-# ETAPA 4: SELECCION DE VARIABLES
+# ETAPA 4: SELECCION DE VARIABLES (metodo rVP)
 # =============================================================================
 
 print("\n\n" + "=" * 70)
-print("  ETAPA 4: SELECCION DE VARIABLES")
-print("  Metodo: Suma de fila completa de la matriz IM (MI directa)")
-print("  Delta = |SUM_BEST - SUM_WORST|")
-print("  Variables con mayor Delta = mas discriminativas entre grupos")
+print("  ETAPA 4: SELECCION DE VARIABLES - Metodo rVP")
+print("  rVP = Rango de Variacion Permitido")
+print("  Metodo: distancias de caminos dentro del MST (MAX, MI)")
+print("  Delta = SUM_A - SUM_B")
+print("  |Delta| > 0.5 -> variable CRITICA")
 print("=" * 70)
 
-sum_b = {}; sum_w = {}
-for i in range(len(r_b['variables'])):
-    sum_b[i] = sum(r_b['mi_matrix'][i])
-    sum_w[i] = sum(r_w['mi_matrix'][i])
+import networkx as nx
+
+def build_mst(mi_matrix, variables):
+    n = len(variables)
+    G = nx.Graph()
+    for i in range(n):
+        for j in range(i + 1, n):
+            G.add_edge(i, j, weight=mi_matrix[i, j])
+    G_neg = nx.Graph()
+    for u, v, data in G.edges(data=True):
+        G_neg.add_edge(u, v, weight=-data['weight'])
+    mst_neg = nx.minimum_spanning_tree(G_neg)
+    mst = []
+    for u, v in mst_neg.edges():
+        mst.append((u, v, mi_matrix[u, v]))
+    return mst
+
+def rVP(mi_matrix, variables):
+    n = len(variables)
+    mst = build_mst(mi_matrix, variables)
+    G_mst = nx.Graph()
+    for u, v, w in mst:
+        G_mst.add_edge(variables[u], variables[v], weight=w)
+    path_matrix = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                path = nx.shortest_path(G_mst, source=variables[i], target=variables[j], weight='weight')
+                path_matrix[i, j] = sum(G_mst[path[k]][path[k+1]]['weight'] for k in range(len(path)-1))
+    suma = {i: sum(path_matrix[i]) for i in range(n)}
+    return path_matrix, suma, mst
+
+_, sum_b, _ = rVP(r_b['mi_matrix'], r_b['variables'])
+_, sum_w, _ = rVP(r_w['mi_matrix'], r_w['variables'])
 
 ranking = []
 for i, var in enumerate(r_b['variables']):
-    sb = sum_b[i]; sw = sum_w[i]; delta = abs(sb - sw)
-    ranking.append((var, sb, sw, delta))
+    sb = sum_b[i]; sw = sum_w[i]; delta = sb - sw
+    ranking.append((var, sb, sw, delta, abs(delta)))
 
-ranking.sort(key=lambda x: -x[3])
+ranking.sort(key=lambda x: -x[4])
 
-umbral = 0.01
-print(f"\n  {'Variable':<10} {'SUM BEST':<14} {'SUM WORST':<14} {'|Delta|':<12} {'Decision (umbral='+str(umbral)+')'}")
-print(f"  {'-'*65}")
-for var, sb, sw, d in ranking:
-    decision = "CONSERVAR" if d >= umbral else "ELIMINAR"
-    print(f"  {var:<10} {sb:<14.6f} {sw:<14.6f} {d:<12.6f} {decision}")
+umbral = 0.5
+print(f"\n  {'Variable':<10} {'SUM BEST':<14} {'SUM WORST':<14} {'Delta':>12} {'|Delta|':<10} {'Critica?'}")
+print(f"  {'-'*68}")
+for var, sb, sw, d, ad in ranking:
+    critica = 'SI' if ad > umbral else 'No'
+    print(f"  {var:<10} {sb:<14.4f} {sw:<14.4f} {d:12.4f} {ad:<10.4f} {critica}")
 
-keep = [v for v, _, _, d in ranking if d >= umbral]
-discard = [v for v, _, _, d in ranking if d < umbral]
-print(f"\n  CONSERVAR ({len(keep)}/{len(ranking)}): {keep}")
-print(f"  ELIMINAR ({len(discard)}/{len(ranking)}): {discard}")
+criticas = [(var, f'{d:+.4f}') for var, _, _, d, ad in ranking if ad > umbral]
+estables = [var for var, _, _, _, ad in ranking if ad <= umbral]
+print(f"\n  Variables CRITICAS (|Delta| > {umbral}): {criticas}")
+print(f"  Variables ESTABLES: {estables}")
 
 print("\n" + "=" * 70)
 print("  PIPELINE COMPLETADO")

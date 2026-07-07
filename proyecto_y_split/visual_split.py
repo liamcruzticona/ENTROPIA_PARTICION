@@ -518,53 +518,74 @@ wait_for_enter()
 
 print("\n  >>> Mostrando SELECCION DE VARIABLES...")
 
-# Calcular Delta: suma de fila completa de matriz IM (MI directa)
-sum_b = {}; sum_w = {}
-for i in range(len(vars_list)):
-    sum_b[i] = sum(all_data['BEST']['mi_mat'][i])
-    sum_w[i] = sum(all_data['WORST']['mi_mat'][i])
+# Calcular Delta: metodo rVP - distancias de caminos en el MST
+import networkx as nxx
+
+def calc_rVP(mi_mat, vars_list):
+    n = len(vars_list)
+    G = nxx.Graph()
+    for i in range(n):
+        for j in range(i+1, n):
+            G.add_edge(i, j, weight=mi_mat[i,j])
+    G_neg = nxx.Graph()
+    for u,v,d in G.edges(data=True):
+        G_neg.add_edge(u, v, weight=-d['weight'])
+    mst_neg = nxx.minimum_spanning_tree(G_neg)
+    G_mst = nxx.Graph()
+    for u,v in mst_neg.edges():
+        G_mst.add_edge(vars_list[u], vars_list[v], weight=mi_mat[u,v])
+    path_mat = np.zeros((n,n))
+    for i in range(n):
+        for j in range(n):
+            if i!=j:
+                p = nxx.shortest_path(G_mst, vars_list[i], vars_list[j], weight='weight')
+                path_mat[i,j] = sum(G_mst[p[k]][p[k+1]]['weight'] for k in range(len(p)-1))
+    return {i: sum(path_mat[i]) for i in range(n)}
+
+sum_b = calc_rVP(all_data['BEST']['mi_mat'], vars_list)
+sum_w = calc_rVP(all_data['WORST']['mi_mat'], vars_list)
 
 ranking = []
 for i, var in enumerate(vars_list):
-    sb = sum_b[i]; sw = sum_w[i]; delta = abs(sb - sw)
-    ranking.append((var, sb, sw, delta))
-ranking.sort(key=lambda x: -x[3])
+    sb = sum_b[i]; sw = sum_w[i]; delta = sb - sw
+    ranking.append((var, sb, sw, delta, abs(delta)))
+ranking.sort(key=lambda x: -x[4])
 
-umbral = 0.01
+umbral = 0.5
 
 fig, (ax_bar, ax_table) = plt.subplots(1, 2, figsize=(18, 9),
     gridspec_kw={'width_ratios': [1.2, 1]})
-fig.suptitle("SELECCION DE VARIABLES - Matriz IM (MI directa)", fontsize=16,
+fig.suptitle("SELECCION DE VARIABLES - Metodo rVP", fontsize=16,
              fontweight='bold', color='#2c3e50', y=0.98)
 
 # Barras
 vars_rev = [r[0] for r in ranking[::-1]]
 deltas_rev = [r[3] for r in ranking[::-1]]
-colors = ['#27ae60' if d >= umbral else '#e74c3c' for d in deltas_rev]
+colors = ['#e74c3c' if abs(d) > umbral else '#27ae60' for d in deltas_rev]
 ax_bar.barh(range(len(vars_rev)), deltas_rev, color=colors, edgecolor='white')
 for i, (v, d) in enumerate(zip(vars_rev, deltas_rev)):
-    ax_bar.text(d + 0.01, i, f"{v} ({d:.4f})", va='center', fontsize=12, fontweight='bold')
+    ax_bar.text(d + 0.05, i, f"{v} ({d:+.4f})", va='center', fontsize=12, fontweight='bold')
 ax_bar.set_yticks(range(len(vars_rev)))
 ax_bar.set_yticklabels(vars_rev, fontsize=13, fontweight='bold')
-ax_bar.set_xlabel('|Delta| = |SUM_BEST - SUM_WORST|', fontsize=11)
-ax_bar.set_title(f'Verde = CONSERVAR (>= {umbral}), Rojo = ELIMINAR', fontsize=12,
+ax_bar.set_xlabel('Delta = SUM_BEST - SUM_WORST', fontsize=11)
+ax_bar.set_title(f'Rojo = CRITICA (|D|>{umbral}), Verde = estable', fontsize=12,
                  fontweight='bold', color='#2c3e50')
 
 # Tabla
 ax_table.axis('off')
-tbl_data = [['Var', 'SUM BEST', 'SUM WORST', '|Delta|', 'Decision']]
-for var, sb, sw, d in ranking:
-    dec = 'CONSERVAR' if d >= umbral else 'ELIMINAR'
-    tbl_data.append([var, f'{sb:.4f}', f'{sw:.4f}', f'{d:.4f}', dec])
+tbl_data = [['Var', 'SUM BEST', 'SUM WORST', 'Delta', '|Delta|', 'Critica?']]
+for var, sb, sw, d, ad in ranking:
+    critica = 'SI' if ad > umbral else 'No'
+    tbl_data.append([var, f'{sb:.4f}', f'{sw:.4f}', f'{d:+.4f}', f'{ad:.4f}', critica])
 tbl = ax_table.table(cellText=tbl_data, cellLoc='center', loc='center')
 tbl.auto_set_font_size(False); tbl.set_fontsize(10); tbl.scale(1.1, 1.6)
 for key, cell in tbl.get_celld().items():
     cell.set_edgecolor('#2c3e50'); cell.set_linewidth(1)
     if key[0] == 0: cell.set_facecolor('#2c3e50'); cell.get_text().set_color('white')
-ax_table.set_title('Ranking completo', fontsize=13, fontweight='bold', pad=15)
+ax_table.set_title('Ranking rVP completo', fontsize=13, fontweight='bold', pad=15)
 
-keep_vars = [v for v, _, _, d in ranking if d >= umbral]
-info2 = f"CONSERVAR: {keep_vars} ({len(keep_vars)}/{len(ranking)})  |  umbral={umbral}"
+criticas = [v for v, _, _, _, ad in ranking if ad > umbral]
+info2 = f"CRITICAS: {criticas}  |  Umbral={umbral}"
 fig.text(0.5, 0.01, info2, ha='center', fontsize=13, color='#27ae60', fontweight='bold')
 plt.figtext(0.5, 0.03, "PRESIONE ENTER para finalizar", ha='center',
             fontsize=11, color='#7f8c8d', fontweight='bold')
