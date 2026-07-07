@@ -202,7 +202,7 @@ preguntas."
   3:45 - 4:00   Prim (slide)                         15 seg
   4:00 - 4:15   Kruskal + MIN vs MAX                 15 seg
   4:15 - 4:45   Comparacion BEST vs WORST             30 seg
-  4:45 - 5:45   rVP (metodo companero)               60 seg
+  4:45 - 5:45   rVP (umbral 0.5)                 60 seg
   5:45 - 6:30   Profesor (matriz distancias)          45 seg
   6:30 - 7:15   Comparacion de metodos                45 seg
   7:15 - 8:00   Hallazgos                            45 seg

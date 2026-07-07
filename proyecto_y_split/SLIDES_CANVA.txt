@@ -194,7 +194,7 @@ definido por Y. Los costos MIN difieren, confirmando cambio topologico.
 
 
 ================================================================================
-  SLIDE 10 - METODO rVP (companero)
+  SLIDE 10 - METODO 1: rVP (Rango de Variacion Permitido)
 ================================================================================
 
 rVP = Rango de Variacion Permitido
@@ -244,7 +244,7 @@ RESULTADO:
   SLIDE 12 - COMPARACION DE METODOS
 ================================================================================
 
-  Variable   rVP (companero)    Profesor (distancias)
+  Variable   rVP (umbral 0.5)    Profesor (distancias)
   ---------------------------------------------------
   x3         CRITICA #1         Baja (#5)
   x4         CRITICA #2         Muy baja (#7)
