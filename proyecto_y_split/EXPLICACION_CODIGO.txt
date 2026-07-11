@@ -1,0 +1,467 @@
+================================================================================
+  EXPLICACION DEL CODIGO - Proyecto BEST vs WORST
+  Pipeline: Entropia -> IM -> MST (Prim + Kruskal) -> rVP
+  Cada seccion indica: FORMULA, ARCHIVO, LINEA, CODIGO, EXPLICACION
+================================================================================
+
+----------------------------------------------------------------------
+1. ENTROPIA DE SHANNON     H(X) = -SUM P(x) * log2 P(x)
+----------------------------------------------------------------------
+
+  FORMULA MATEMATICA:
+    H(X) = - SUM_{x in X} P(x) * log2( P(x) )
+
+    Mide la cantidad promedio de incertidumbre de una variable.
+    Unidades: bits. H_max = log2(k) para k valores equiprobables.
+
+  ARCHIVO: pipeline_comparar.py, LINEA 16
+           visual_split.py,        LINEA 81
+
+  CODIGO REAL:
+    def entropy(probs):
+        total = 0.0
+        for p in probs:
+            if p > 0:
+                total -= p * np.log2(p)
+        return total
+
+  EXPLICACION LINEA POR LINEA:
+    L1: recibe una lista de probabilidades (ej: [0.4810, 0.3930, 0.1260])
+    L2: inicia el acumulador en 0
+    L3: recorre cada probabilidad P(x)
+    L4: si P(x)=0, no aporta (log2(0) no esta definido)
+    L5: acumula -P(x) * log2(P(x)) segun la formula de Shannon
+        np.log2(p) calcula el logaritmo en base 2
+    L6: devuelve la entropia total en bits
+
+  EJEMPLO CON NUESTROS DATOS (x5 en BEST):
+    Entrada:  [0.4810, 0.3930, 0.1260]
+    Calculo:  -(0.4810 * -1.0560) -(0.3930 * -1.3471) -(0.1260 * -2.9885)
+    Salida:   0.5079 + 0.5294 + 0.3766 = 1.4140 bits
+
+  DONDE SE LLAMA:
+    pipeline_comparar.py, run_pipeline(), linea ~80:
+      entropies = {var: entropy(list(prob_tables[var].values())) for var in variables}
+
+
+----------------------------------------------------------------------
+2. INFORMACION MUTUA     I(X;Y) = SUM SUM P(x,y) * log2( P(x,y) / P(x)P(y) )
+----------------------------------------------------------------------
+
+  FORMULA MATEMATICA:
+    I(X;Y) = SUM_{x in X} SUM_{y in Y} P(x,y) * log2( P(x,y) / (P(x)*P(y)) )
+
+    Mide cuanta informacion comparten dos variables.
+    0 <= I(X;Y) <= min(H(X), H(Y))
+
+  ARCHIVO: pipeline_comparar.py, LINEA 20
+           visual_split.py,        LINEA 85
+
+  CODIGO REAL:
+    def mutual_info(col_x, col_y, n):
+        jc = {}
+        for i in range(n):
+            k = (col_x[i], col_y[i])
+            jc[k] = jc.get(k, 0) + 1
+
+        mi = 0.0
+        for (vx, vy), c in jc.items():
+            p_xy = c / n
+            p_x = np.sum(col_x == vx) / n
+            p_y = np.sum(col_y == vy) / n
+            mi += p_xy * np.log2(p_xy / (p_x * p_y))
+        return mi
+
+  EXPLICACION LINEA POR LINEA:
+    L1: recibe 3 parametros: columna X, columna Y, cantidad de filas n
+    L2: diccionario vacio para la tabla de contingencia
+    L3-5: recorre todas las filas. Para cada registro (x_i, y_i),
+          cuenta cuantas veces aparece la combinacion (x,y).
+          Ej: jc[(0,0)] cuenta cuantas filas tienen x=0 e y=0
+    L7: inicializa la suma de MI en 0
+    L8: recorre cada celda de la tabla de contingencia
+    L9: p_xy = probabilidad conjunta = conteo / n
+    L10: p_x = probabilidad marginal de x. np.sum(col_x==vx) cuenta
+         cuantas veces aparece vx en toda la columna X
+    L11: p_y = probabilidad marginal de y
+    L12: acumula el termino de la formula:
+         p_xy * log2( p_xy / (p_x * p_y) )
+         Si X e Y son independientes: p_xy = p_x * p_y, el cociente=1,
+         log2(1)=0, no aporta. Si hay dependencia, el cociente se
+         desvia de 1 y el termino es positivo o negativo.
+    L13: devuelve la MI total
+
+  EJEMPLO CON NUESTROS DATOS (x1 vs x5 en BEST):
+    Tabla de contingencia:
+         x5=0  x5=1  x5=2
+    x1=0  394   393     0  -> 787
+    x1=1   87     0   126  -> 213
+    Total 481   393   126  -> 1000
+
+    P(x1=0)=0.7870  P(x1=1)=0.2130
+    P(x5=0)=0.4810  P(x5=1)=0.3930  P(x5=2)=0.1260
+
+    Termino (0,0): 0.3940 * log2(0.3940/(0.7870*0.4810)) = +0.0227
+    Termino (0,1): 0.3930 * log2(0.3930/(0.7870*0.3930)) = +0.1358
+    Termino (1,0): 0.0870 * log2(0.0870/(0.2130*0.4810)) = -0.0205
+    Termino (1,2): 0.1260 * log2(0.1260/(0.2130*0.1260)) = +0.2811
+    Total: 0.0227 + 0.1358 - 0.0205 + 0.2811 = 0.4191 bits
+
+  DONDE SE LLAMA:
+    pipeline_comparar.py, run_pipeline(), linea ~90:
+      for v1, v2 in combinations(range(n_cols), 2):
+          m = mutual_info(data[:, v1], data[:, v2], n_rows)
+          mi_dict[(v1, v2)] = m; mi_dict[(v2, v1)] = m
+
+    combinations(range(7), 2) genera los 21 pares de variables (7 vars)
+
+
+----------------------------------------------------------------------
+3. CONVERSION A DISTANCIA     d = 1 - MI / min(H_i, H_j)
+----------------------------------------------------------------------
+
+  FORMULA MATEMATICA:
+    d(X_i, X_j) = 1 - I(X_i; X_j) / min( H(X_i), H(X_j) )
+
+    Convierte la similitud (MI) en distancia.
+    d = 0: dependencia perfecta (una variable determina a la otra)
+    d = 1: independencia total
+
+  ARCHIVO: pipeline_comparar.py, LINEA ~110 (dentro de run_pipeline)
+
+  CODIGO REAL:
+    dist_matrix = np.zeros((n_cols, n_cols))
+    for i in range(n_cols):
+        for j in range(n_cols):
+            if i != j:
+                min_h = min(entropies[variables[i]], entropies[variables[j]])
+                dist_matrix[i, j] = max(0.0, 1.0 - mi_matrix[i,j] / min_h) if min_h > 0 else 0.0
+
+  EXPLICACION:
+    L1: crea matriz de n_cols x n_cols llena de ceros
+    L2-3: doble bucle sobre los 7 indices
+    L4: salta la diagonal (i=j)
+    L5: calcula min(H_i, H_j) para normalizar
+    L6: aplica la formula. El max(0.0, ...) evita valores negativos
+        por errores de punto flotante (ej: -0.0000000001 -> 0)
+
+  EJEMPLO CON NUESTROS DATOS:
+    I(x4, x9) = 0.717910
+    H(x4) = 0.717910, H(x9) = 1.717295
+    min(H4, H9) = 0.717910
+    d(x4, x9) = 1 - 0.717910/0.717910 = 1 - 1 = 0.000000
+
+    Como I(x4,x9) = H(x4), x4 depende PERFECTAMENTE de x9. d=0.
+    Esto ocurre tambien con x6-x9 y en el proyecto original con x7-x8.
+
+
+----------------------------------------------------------------------
+4. ALGORITMO DE PRIM (ARBOL DE EXPANSION MINIMA)
+----------------------------------------------------------------------
+
+  DESCRIPCION:
+    Construye el MST agregando en cada paso la arista de MENOR peso
+    que conecta un nodo visitado con uno no visitado.
+
+  ARCHIVO: pipeline_comparar.py, LINEA ~120 (dentro de run_pipeline)
+
+  CODIGO REAL (Prim MIN con distancias):
+    visited = [False] * n_cols
+    visited[0] = True
+    prim_min = []
+    prim_min_cost = 0.0
+
+    for _ in range(n_cols - 1):
+        bd = float('inf')
+        bu, bv = -1, -1
+        for u in range(n_cols):
+            if visited[u]:
+                for v in range(n_cols):
+                    if not visited[v] and dist_matrix[u, v] < bd:
+                        bd = dist_matrix[u, v]
+                        bu, bv = u, v
+        visited[bv] = True
+        prim_min.append((bu, bv, bd))
+        prim_min_cost += bd
+
+  EXPLICACION LINEA POR LINEA:
+    L1: lista de booleanos: visited[i]=True si el nodo i ya esta en el arbol
+    L2: empezamos desde el nodo 0 (x1)
+    L3-4: lista de aristas y costo acumulado
+    L6: repetir n_cols-1 veces (7-1 = 6 aristas para 7 variables)
+    L7: mejor distancia, inicializada en infinito
+    L8: indices de la mejor arista encontrada
+    L9-10: recorre todos los nodos VISITADOS
+    L11-13: para cada visitado, busca TODOS los NO visitados
+            si la distancia entre u y v es menor que la mejor actual,
+            guarda esa arista como candidata
+    L14: marca el nuevo nodo como visitado
+    L15: agrega la arista al arbol
+    L16: acumula el costo
+
+  EJEMPLO DE EJECUCION (BEST, 7 variables):
+    Paso 1: x1->x5 (d=0.453)  V={x1,x5}
+    Paso 2: x5->x2 (d=0.344)  V={x1,x2,x5}
+    Paso 3: x5->x9 (d=0.989)  V={x1,x2,x5,x9}
+    Paso 4: x9->x6 (d=0.000)  V={x1,x2,x5,x6,x9}
+    Paso 5: x9->x4 (d=0.000)  V={x1,x2,x4,x5,x6,x9}
+    Paso 6: x1->x3 (d=0.997)  V={los 7}  -> COMPLETO
+    Costo total: 2.782115
+
+
+----------------------------------------------------------------------
+5. ALGORITMO DE KRUSKAL + UNION-FIND
+----------------------------------------------------------------------
+
+  DESCRIPCION:
+    Ordena todas las aristas por peso ascendente y las procesa con
+    Union-Find. Acepta las que no forman ciclo.
+
+  UNION-FIND (Estructura de datos para detectar ciclos):
+
+  ARCHIVO: pipeline_comparar.py, LINEA 34-57
+
+  CODIGO REAL:
+    class UnionFind:
+        def __init__(self, n):
+            self.parent = list(range(n))   # cada nodo es su propio padre
+            self.rank = [0] * n            # rango para union balanceada
+
+        def find(self, x):
+            if self.parent[x] != x:
+                self.parent[x] = self.find(self.parent[x])  # compresion de ruta
+            return self.parent[x]
+
+        def union(self, x, y):
+            rx, ry = self.find(x), self.find(y)
+            if rx == ry:
+                return False               # mismo componente -> CICLO -> RECHAZAR
+            if self.rank[rx] < self.rank[ry]:
+                self.parent[rx] = ry
+            elif self.rank[rx] > self.rank[ry]:
+                self.parent[ry] = rx
+            else:
+                self.parent[ry] = rx
+                self.rank[rx] += 1
+            return True                    # componentes diferentes -> ACEPTAR
+
+  EXPLICACION DE FIND:
+    Busca el REPRESENTANTE del componente al que pertenece x.
+    Si parent[x] != x, x NO es el representante.
+    parent[x] = find(parent[x]) aplica COMPRESION DE RUTA:
+    todos los nodos en el camino apuntan directo al representante.
+    Esto hace que las siguientes busquedas sean O(1) amortizado.
+
+  EXPLICACION DE UNION:
+    Une dos componentes. Si tienen el mismo representante (rx == ry),
+    ya estan en el mismo componente -> formar arista crearia CICLO -> retorna False.
+    Si no, une el arbol de MENOR rango al de MAYOR rango (union por rango).
+    Si ambos tienen el mismo rango, cuelga uno del otro y aumenta el rango en 1.
+
+  EJEMPLO DE EJECUCION (BEST):
+    Aristas ordenadas por distancia (menor primero):
+    1. x9-x6 (0.000) -> Find(x9)!=Find(x6) -> Union -> ACEPTADA (1/6)
+    2. x9-x4 (0.000) -> componentes diferentes -> ACEPTADA (2/6)
+    3. x5-x2 (0.344) -> ACEPTADA (3/6)
+    4. x1-x5 (0.453) -> ACEPTADA (4/6)
+    5. x1-x3 (0.997) -> ACEPTADA (5/6)
+    6. x1-x6 (0.992) -> Find(x1)==Find(x6) via x1-x5-x9-x6
+       -> MISMO COMPONENTE -> RECHAZADA (ciclo)
+    ...
+    9. x5-x9 (0.989) -> ACEPTADA (6/6) -> COMPLETO
+
+    Costo total: 2.782115 (identico a Prim)
+
+
+----------------------------------------------------------------------
+6. PIPELINE COMPLETO (funcion run_pipeline)
+----------------------------------------------------------------------
+
+  ARCHIVO: pipeline_comparar.py, LINEA 66
+
+  FLUJO DE LA FUNCION:
+    def run_pipeline(header, data, label):
+        # 1. Frecuencias y probabilidades
+        for cada variable:
+            Counter(col) -> cuenta cuantas veces aparece cada valor
+            divide por n_rows -> probabilidad P(x)
+
+        # 2. Entropia H(X) para las 7 variables
+        entropies = {var: entropy(list(probs))}
+
+        # 3. Informacion Mutua para los 21 pares
+        for cada par (i,j) con i<j:
+            I(Xi,Xj) = mutual_info(col_i, col_j, n)
+            guardar en mi_dict y mi_matrix
+
+        # 4. Matriz de distancias 7x7
+        for i, j:
+            d(i,j) = 1 - MI(i,j) / min(H_i, H_j)
+
+        # 5. Prim MIN (distancias)
+        construir arbol con 6 aristas
+
+        # 6. Kruskal MIN (distancias)
+        construir arbol con 6 aristas (mismo costo)
+
+        # 7. Prim MAX (MI directa)
+        construir arbol seleccionando mayor MI
+
+        # 8. Kruskal MAX (MI directa)
+        mismo resultado que Prim MAX
+
+        # 9. Devolver todo en un diccionario
+        return {label, n_rows, variables, entropies, mi_matrix,
+                dist_matrix, prim_min, prim_min_cost, kruskal_min,
+                kruskal_min_cost, prim_max, prim_max_cost,
+                kruskal_max, kruskal_max_cost}
+
+
+----------------------------------------------------------------------
+7. METODO rVP (RANGO DE VARIACION PERMITIDO)
+----------------------------------------------------------------------
+
+  DESCRIPCION:
+    rVP mide cuanto cambia la POSICION TOPOLOGICA de cada variable
+    entre BEST y WORST. Se usa el arbol MAX (MI directa).
+
+  FORMULA:
+    1. Construir MST (MAX, MI) para BEST y para WORST
+    2. Calcular distancia de camino entre cada par (i,j) DENTRO del arbol
+    3. SUM_BEST(i) = suma de todos los caminos desde Xi en BEST
+    4. SUM_WORST(i) = suma de todos los caminos desde Xi en WORST
+    5. DELTA(i) = |SUM_BEST(i) - SUM_WORST(i)|
+    6. Si DELTA > 0.5 -> variable CRITICA
+
+  ARCHIVO: pipeline_comparar.py, LINEA 412 (build_mst) y 427 (rVP)
+
+  CODIGO REAL (calcula la matriz de distancias de caminos):
+    def rVP(mi_matrix, variables):
+        n = len(variables)
+        # 1. Construir MST MAX
+        mst = build_mst(mi_matrix, variables)
+
+        # 2. Crear grafo del MST
+        G_mst = nx.Graph()
+        for u, v, w in mst:
+            G_mst.add_edge(variables[u], variables[v], weight=w)
+
+        # 3. Calcular camino mas corto entre cada par
+        path_matrix = np.zeros((n, n))
+        for i in range(n):
+            for j in range(n):
+                if i != j:
+                    path = nx.shortest_path(G_mst, variables[i],
+                                           variables[j], weight='weight')
+                    path_matrix[i, j] = sum(G_mst[path[k]][path[k+1]]['weight']
+                                           for k in range(len(path)-1))
+
+        # 4. Sumar cada fila
+        suma = {i: sum(path_matrix[i]) for i in range(n)}
+        return suma
+
+  EXPLICACION:
+    - shortest_path() encuentra el UNICO camino entre dos nodos en el arbol
+    - path_matrix[i,j] = suma de pesos MI a lo largo de ese camino
+    - suma[i] = que tan "lejos" esta el nodo i de todos los demas
+    - Si suma[i] cambia mucho entre BEST y WORST -> el nodo cambio de rol
+
+  RESULTADO CON NUESTROS DATOS:
+    Variable  SUM_BEST  SUM_WORST  |DELTA|   Critica?
+    x3        4.5371    2.8521     1.6850    SI (cambio masivo de posicion)
+    x4        7.0345    6.2531     0.7814    SI (cambio significativo)
+    x9        3.2972    2.8230     0.4742    No
+    x6        8.2844    7.8221     0.4623    No
+    x5        3.2811    2.8299     0.4511    No
+    x1        4.5259    4.9485     0.4225    No
+    x2        6.5584    6.2646     0.2938    No
+
+    INTERPRETACION:
+    x3 es la mas critica. En BEST esta cerca del centro del arbol
+    (conectada a x1, SUM=4.54). En WORST esta en la periferia
+    (conectada a x9, SUM=2.85). La particion por Y rompio completamente
+    su posicion en el arbol.
+
+
+----------------------------------------------------------------------
+8. VISUALIZACION PASO A PASO (Prim y Kruskal en vivo)
+----------------------------------------------------------------------
+
+  ARCHIVO: visual_split.py
+
+  Funcion draw_prim_step (LINEA 265):
+    Dibuja el estado actual de Prim:
+    - Nodos verdes = visitados (ya en el arbol)
+    - Nodos grises = no visitados
+    - Aristas verdes finas = aristas previas del arbol
+    - Arista azul gruesa = arista recien agregada
+    - Pesos visibles como etiquetas en cada arista
+
+  Funcion draw_kruskal_step (LINEA 297):
+    Dibuja el estado actual de Kruskal:
+    - Aristas verdes = aceptadas (no forman ciclo)
+    - Arista azul gruesa = arista recien ACEPTADA
+    - Arista roja punteada = arista RECHAZADA (forma ciclo)
+    - Muestra "ACEPTADA" o "RECHAZADA (ciclo)" en la parte inferior
+
+  Funcion wait_for_enter (LINEA 64):
+    Bloquea la ejecucion hasta que el usuario presione ENTER en la
+    ventana grafica. Usa plt.pause(0.1) en un bucle while que revisa
+    eventos de teclado. Timeout de 120 segundos.
+
+  Flujo de visual_split.py:
+    1. Carga CSVs y ejecuta run_pipeline en BEST y WORST
+    2. Muestra matrices IM 7x7 + distancias (heatmaps)
+    3. Prim BEST paso a paso (6 pasos)
+    4. Kruskal BEST paso a paso (~10 evaluaciones)
+    5. Prim WORST paso a paso (6 pasos)
+    6. Kruskal WORST paso a paso (~10 evaluaciones)
+    7. Comparacion final 4 arboles (2x2)
+    8. Pantalla rVP con barras y tabla de ranking
+
+
+----------------------------------------------------------------------
+9. EJEMPLO REAL EJECUTADO (valores que produce cada funcion)
+----------------------------------------------------------------------
+
+  DATOS DE ENTRADA:
+    d9_strong.txt: 1000 filas x 9 variables (x1-x9)
+    x7=x8 identicas -> combinadas en Y (solo para particionar)
+    BEST (Y=1): 502 filas x 7 columnas (x1,x2,x3,x4,x5,x6,x9)
+    WORST (Y=0): 498 filas x 7 columnas (x1,x2,x3,x4,x5,x6,x9)
+
+  SALIDA DE CADA FUNCION:
+
+  1. entropy([0.4810, 0.3930, 0.1260])        -> 1.4140 bits
+  2. mutual_info(col_x1, col_x5, 502)          -> 0.4191 bits
+  3. entropy de x9 en BEST                     -> 1.7448 bits
+  4. entropy de x9 en WORST                    -> 1.6854 bits
+  5. I(x6,x9) en BEST                          -> 0.9974
+  6. I(x6,x9) en WORST                         -> 0.9998
+  7. d(x4,x9) en BEST                          -> 0.000000 (dependencia perfecta)
+  8. d(x6,x9) en BEST                          -> 0.000000 (dependencia perfecta)
+
+  9. Prim MIN BEST: 6 aristas, costo 2.782115
+  10. Kruskal MIN BEST: 6 aristas, costo 2.782115 (coinciden)
+  11. Prim MIN WORST: 6 aristas, costo 2.723224
+  12. Kruskal MIN WORST: 6 aristas, costo 2.723224 (coinciden)
+
+  13. Prim MAX BEST: costo 2.833722
+  14. Prim MAX WORST: costo 2.809188
+
+  15. rVP: x3 (|DELTA|=1.685) y x4 (|DELTA|=0.781) son CRITICAS
+  16. Aristas MIN en comun BEST vs WORST: 5/6 (83%)
+
+  ARCHIVOS DEL PROYECTO:
+    pipeline_comparar.py     - Pipeline completo + ETAPA 4 (rVP) + Excel
+    visual_split.py          - Visualizacion interactiva paso a paso
+    generar_reducido.py      - Dataset reducido por rVP
+    generar_csvs.py          - Genera CSVs desde d9_strong.txt
+    d9_strong_B.csv          - 502 filas BEST
+    d9_strong_W.csv          - 498 filas WORST
+    resultados_split.xlsx    - Excel con hojas BEST_Y1, WORST_Y0, COMPARACION
+    informe_apa7_split.tex   - Informe APA 7
+
+================================================================================
+  FIN DE LA EXPLICACION
+================================================================================
